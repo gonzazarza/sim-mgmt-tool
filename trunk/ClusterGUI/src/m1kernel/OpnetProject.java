@@ -2,12 +2,12 @@ package m1kernel;
 
 //classes
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 //exceptions
-import m1kernel.exceptions.OpnetExceptionClass;
 import m1kernel.exceptions.OpnetStrongException;
-import m1kernel.exceptions.OpnetLightException;
 //interfaces
 import m1kernel.interfaces.IAppUtils;
 import m1kernel.interfaces.IOpnetProject;
@@ -17,7 +17,7 @@ import m1kernel.interfaces.ISysUtils;
  * Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1028
+ * @version		2010.1102
  */
 public class OpnetProject implements IOpnetProject {
 
@@ -30,7 +30,7 @@ public class OpnetProject implements IOpnetProject {
 	private IAppUtils									appUtils			= null;				//application-based utilities
 	private String										className			= "unknown";		//class name
 	private String										fileSeparator		= "/";				//system file separator
-	private String										lineSeparator		= "\n";				//system line separator
+	private String										lineBreak			= "\n";				//system line separator
 	private String										projectName			= "";				//project name
 	private String										projectPath			= "";				//project path	
 	private HashMap<String,HashMap<String,OpnetJob>>	networksMap			= null;				//project networks map
@@ -59,7 +59,7 @@ public class OpnetProject implements IOpnetProject {
 		
 		//load separators
 		this.fileSeparator			= System.getProperty("file.separator");
-		this.lineSeparator			= System.getProperty("line.separator");
+		this.lineBreak				= System.getProperty("line.separator");
 		
 		//initialize the networks map
 		this.networksMap			= new HashMap<String,HashMap<String,OpnetJob>>();
@@ -116,7 +116,7 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Load the supplementary environmental files and set the networks map
 	 */
-	public void setNetworksMap() throws OpnetStrongException, OpnetLightException {
+	public void setNetworksMap() throws OpnetStrongException {
 		
 		//check the previous operation status
 		if (!this.isProjecLoaded) {
@@ -141,11 +141,6 @@ public class OpnetProject implements IOpnetProject {
 			
 			//load the list of unique network names
 			networks				= this.appUtils.parseFileNamesList(files, true);
-			
-			//check the existence of illegal file names
-			if (this.appUtils.existIllegalEFFileNames()){
-				throw new OpnetLightException("Illegal supplementary environmental files found (see log).", OpnetExceptionClass.MSG_TYPE_WARNING);
-			}
 			
 			//set the networks map (with empty opnet jobs)
 			for (int i = 0; i < networks.size(); i++){
@@ -226,6 +221,7 @@ public class OpnetProject implements IOpnetProject {
 				tableData[localSize][1]			= included;                     
 				//update the counter
 				localSize++;
+					
 			}			
 		}		
 		
@@ -238,7 +234,7 @@ public class OpnetProject implements IOpnetProject {
 	/** 
 	 * @param the data for the list of supplementary environmental files and their included status to set 
 	 */
-	public void setTableData(Object[][] pData) throws OpnetStrongException {
+	public void setFilesData(Object[][] pData) throws OpnetStrongException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
@@ -283,10 +279,51 @@ public class OpnetProject implements IOpnetProject {
 		}	
 		
 		
-	} // End setEFFilesTableData()
+	} // End setFilesData()
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
+	/**
+	 * Set the isIncluded status for the fileName
+	 * 
+	 * @param		pFileName			the item identifier
+	 * @param		pIsIncluded			the item status
+	 * 
+	 */	
+	public void setIncluded(String pFileName, boolean pIsIncluded) throws OpnetStrongException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to set the included status: networks map not set");
+		}
+		
+		//local attributes
+		String						netName		= this.appUtils.parseSingleFileName(pFileName);
+		
+		if (netName != null){
+			
+			//check the outer map
+			if (this.networksMap.containsKey(netName)){
+				//check the inner map
+				if (this.networksMap.get(netName).containsKey(pFileName)){
+					
+					//set the included status
+					this.networksMap.get(netName).get(pFileName).setEfFileIncluded(pIsIncluded);
+					
+				} else {
+					//file name not found
+					throw new OpnetStrongException("File name " + pFileName + " not found in the networks map");
+				}
+			} else {
+				//network name not found
+				throw new OpnetStrongException("Network name " + netName + " not found in the networks map");
+			}
+						
+		} else {
+			throw new OpnetStrongException("Unable to get the net name: wrong file name " + pFileName);
+		}		
+		
+	} // End setIncluded
 	
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -297,16 +334,213 @@ public class OpnetProject implements IOpnetProject {
 	 * @return 			the set of network names prepared for the output text area  
 	 */
 	public String getOutputNetworkNames(){
-		
+				
 		//local attributes
-		String		outNetNames		= "";
+		String		outNetNames		= null;
 		
 		//get the console net names
 		outNetNames					= this.appUtils.getConsoleNetworkNames();
-				
+
+		//avoid the null pointer exception
+		if (outNetNames == null){
+			outNetNames				= "";
+		}
+		
+		//return the console net names
 		return(outNetNames);		
 		
 	} // End String getConsoleNetworkNames
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * @return the length of the files data  (a.k.a. the number of ef files) 
+	 */
+	public int getFilesDataLength() {
+		
+		//return the length
+		return (this.efFilesNum);
+		
+	} // End getFilesDataLength	
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * @return the set of network names
+	 */
+	public Set<String> getNetworksNames() throws OpnetStrongException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to set get the networks names: networks map not set");
+		}
+		
+		//local attributes
+		Set<String>			netNames	=  this.networksMap.keySet();
+		
+		//return the net names
+		return (netNames);
+		
+	} // End Set<String> getNetworksNames
+		
+	/* ------------------------------------------------------------------------------------------------------------ */	
+
+	/**
+	 * @return the set of selected network names
+	 */
+	public Set<String> getSelectedNetworksNames() throws OpnetStrongException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to set get the networks names: networks map not set");
+		}
+		
+		//local attributes
+		Set<String>					selNetNames	= new HashSet<String>();
+		Iterator<String>			itOuter		= this.networksMap.keySet().iterator();
+		Iterator<String>			itInner		= null;
+		HashMap<String,OpnetJob>	itemOuter	= null;
+		String						netName		= "";
+		String						fileName	= "";
+		boolean						included	= false;
+		
+		//check the network selected status
+		while (itOuter.hasNext()){
+			//reset the included flag
+			included							= false;
+			//get the net name
+			netName								= itOuter.next();
+			//get the net hash map
+			itemOuter							= this.networksMap.get(netName);
+			//get the inner iterator
+			itInner								= itemOuter.keySet().iterator();
+			//check the status of the entire file names for each list
+			while (itInner.hasNext()){
+				//get the file name
+				fileName						= itInner.next();
+				//check the included status
+				if (itemOuter.get(fileName).isEfFileIncluded()){
+					included					= true;
+					break;
+				}
+			}
+			//add the net name if at least one file name is included
+			if (included){
+				selNetNames.add(netName);
+			}
+			
+		}
+		
+		
+		//return the selected net names
+		return(selNetNames);
+		
+	} // End Set<String> getSelectedNetworksNames()
+
+	
+	/* ------------------------------------------------------------------------------------------------------------ */	
+	
+	/**
+	 * Return the content of the specified file
+	 * 
+	 * @param	pFileName			the name of the file to load
+	 * 
+	 */
+	public String getEfFileContent(String pFileName) throws OpnetStrongException {
+	
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to load the ef file content: networks map not set");
+		}	
+		
+		//local attributes
+		String		fileContent		= "";
+		boolean		completed		= false;
+		
+		//load the file
+		completed					= this.appUtils.loadFileContent(this.projectPath, pFileName);
+		
+		//get the content
+		if (completed){			
+			fileContent				= this.appUtils.getEfContents().toString();			
+		} else {
+			//load error
+			throw new OpnetStrongException("Unable to load the ef file content: AppUtils class error");
+		}		
+		
+		//exit
+		return(fileContent);
+		
+	} // End String getEfFileContent
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Return the code for the op_mksim command for the specified network
+	 * 
+	 *  @param			pNetName	the network name
+	 *  @return						the op_mksim code
+	 */
+	public Vector<String> getNetworkMKSIMCode(String pNetName) throws OpnetStrongException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to load the network op_mksim code: networks map not set");
+		}
+		
+		//local attributes
+		Vector<String>		mkSimCode	= null;
+		Iterator<String>	itInner		= null;
+		String				fileName	= ""; 
+		
+		//check the outer map
+		if (this.networksMap.containsKey(pNetName)){
+			//get the iterator for the network
+			itInner						= this.networksMap.get(pNetName).keySet().iterator();
+			//get the first op_mksim code (in theory all the networks file name shared the same code)
+			if (itInner.hasNext()){
+				fileName				= itInner.next();				
+				mkSimCode				= this.networksMap.get(pNetName).get(fileName).getEfFileMKSIMCode();
+			}
+			
+		} else {
+			//network not found
+			throw new OpnetStrongException("Network name " + pNetName + " not found in the networks map");
+		}		
+		
+		//return the op_mksim code
+		return (mkSimCode);
+		
+	} // End Vector<String> getNetworkMKSIMCode
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** @return the op_mksim command help */
+	public String getMKSIMHelp(){
+		
+		//local attributes
+		String			help	= this.appUtils.getMKSimHelp();
+		
+		//return the help
+		return(help);
+		
+	} // End String getMKSimHelp
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * 
+	 */
+	public String runMKSIMCmd(){
+		
+		//local attributes
+		String		output		= "";
+		
+		
+		//return the output
+		return (output);
+		
+	} // End String runMKSIMCmd
 	
 	
 	/* ------------------------------------------------------------------------------------------------------------ */

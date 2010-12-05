@@ -88,5 +88,8 @@ public interface ISysUtils {
 	
 	/** @return the machineName */
 	String getMachineName();
+	
+	/** @return the log_file_dir */
+	public String getLog_file_dir();
 
 } // End interface IUtils

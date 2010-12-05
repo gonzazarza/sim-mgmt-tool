@@ -1,9 +1,14 @@
 package m1kernel;
 
-//classes
+//io classes
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+//util classes
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -19,7 +24,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1027
+ * @version		2010.1103
  */
 public class AppUtils implements IAppUtils {
 
@@ -30,7 +35,7 @@ public class AppUtils implements IAppUtils {
 	*/
 	private ISysUtils						sysUtils				= null;				//system utilities class
 	private String							className				= "unknown";		//to store the name of the class
-	private String 							lineSeparator			= "";				//system line separator
+	private String 							lineBreak				= "";				//system line separator
 	private String							userHome				= "";				//user dir property	
 	private Vector<String>					efFileList				= null;				//list of ef files
 	private Vector<String>					badFileList				= null;				//list of not valid ef files
@@ -50,7 +55,7 @@ public class AppUtils implements IAppUtils {
 	public AppUtils(ISysUtils pSysUtils){
 		
 		//get the system line separator
-		this.lineSeparator				= System.getProperty("line.separator");
+		this.lineBreak					= System.getProperty("line.separator");
 		
 		//get the user dir property
 		this.userHome					= System.getProperty("user.home");
@@ -70,6 +75,9 @@ public class AppUtils implements IAppUtils {
 		//other initializations
 		this.efFilesByNetworkNames	= new HashMap<String,Vector<String>>();
 		this.efContents				= new StringBuffer("");
+
+		//export the correct LD_LD_LIBRARY_PATH
+		this.exportLD_LIB_PATH();
 		
 		//informs the correct initialization of the class
 		this.sysUtils.printlnOut("Successful initialization", this.className);		
@@ -157,6 +165,9 @@ public class AppUtils implements IAppUtils {
 			this.sysUtils.printlnWar("Unable to load the networks map", this.className + ", loadFileList");
 			return (status);
 		}
+		
+		//update the flag
+		status						= true;
 		
 		//exit
 		return(status);
@@ -354,11 +365,11 @@ public class AppUtils implements IAppUtils {
 					//simulation id
 					this.parsedNetworkNames[count][2]	= stringVec[2];
 					// [0] + '-' + [1] = network name
-					netName								= this.parsedNetworkNames[count][0] + AppUtils.SPLIT_CHAR + this.parsedNetworkNames[count][1];
+					netName								= stringVec[0] + AppUtils.SPLIT_CHAR + stringVec[1];
 					//load the network names list
 					this.networkNames.add(netName);
 					//load the unique network names list
-					if (this.uniqueNetworkNames.contains(netName)){
+					if (!this.uniqueNetworkNames.contains(netName)){
 						this.uniqueNetworkNames.add(netName);
 					}					
 					//updates counter
@@ -437,7 +448,7 @@ public class AppUtils implements IAppUtils {
 				this.efContents.append(" [Line " + ++lineNum + "]  ");
 				//append the data
 				this.efContents.append(text);
-				this.efContents.append(this.lineSeparator);
+				this.efContents.append(this.lineBreak);
 				//read the next line
 				text					= efReader.readLine();
 			}
@@ -541,7 +552,7 @@ public class AppUtils implements IAppUtils {
 		
 		//generates the console-style list of file names
 		for (int i = 0; i < this.uniqueNetworkNames.size(); i++){			
-			netNames.append(Integer.toString(++count) + ") " + this.uniqueNetworkNames.get(i)+ this.lineSeparator);			
+			netNames.append(Integer.toString(++count) + ") " + this.uniqueNetworkNames.get(i)+ this.lineBreak);			
 		}
 	
 		//return the list of network names
@@ -581,7 +592,9 @@ public class AppUtils implements IAppUtils {
 		//--- param: env_db	
 		defParams.add("-env_db "	+ "'" + this.userHome + AppUtils.DIR_OPNET_ADMIN + AppUtils.FILE_NAME_ENV_DB + "'" + bashEOF);		
 		//--- param: net_name	
-		defParams.add("-net_name " 	+ pNetName + bashEOF);		
+		defParams.add("-net_name " 	+ pNetName 	+ bashEOF);		
+		//--- param: c (force recompilation)
+		defParams.add("-c " 		+ "true"	+ bashEOF);
 		//--- param: opnet_dir	
 		defParams.add("-opnet_dir "	+ AppUtils.DIR_OPNET_BINS);					
 		
@@ -658,7 +671,14 @@ public class AppUtils implements IAppUtils {
 		m64.add("ia64");		
 		
 		//run the uname -m command to get the machine time
-		arch					= this.runCommand(AppUtils.CMD_ID_UNAME, "-m");
+		try {
+			arch				= this.runCommand("uname", "-m");
+		} catch (Exception e) {
+			//show the error
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchPath");
+			//return the default path
+			return(AppUtils.DIR_OPNET_BINS);
+		}
 		
 		//check the bits number
 		if (m32.contains(arch)){
@@ -674,6 +694,7 @@ public class AppUtils implements IAppUtils {
 			path				= AppUtils.DIR_OPNET_BINS;
 		}
 		
+		//return the path
 		return(path);
 		
 	} // End String getCorrectArchPath
@@ -681,22 +702,151 @@ public class AppUtils implements IAppUtils {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
+	 * Get the correct opnet lib for the system architecture
+	 * 
+	 * @return			the system architecture opnet lib dir
+	 * 
+	 */
+	private String getCorrectArchLib(){
+		
+		//local attributes
+		String			path	= "";
+		String			arch	= "";
+		//arch outputs
+		Vector<String>	m32		= new Vector<String>();
+		Vector<String>	m64		= new Vector<String>();
+		//--- 32 bits arch
+		m32.add("i386");
+		m32.add("i686");
+		//--- 64 bits arch
+		m64.add("x86_64");
+		m64.add("amd64");
+		m64.add("ia64");		
+		
+		//run the uname -m command to get the machine time
+		try {
+			arch				= this.runCommand("uname", "-m");
+		} catch (Exception e) {
+			//show the error
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchPath");
+			//return the default path
+			return(AppUtils.DIR_OPNET_BINS);
+		}
+		
+		//check the bits number
+		if (m32.contains(arch)){
+			//32 architecture
+			path				= AppUtils.DIR_OPNET32;
+		} else if(m64.contains(arch)){
+			//64 architecture
+			path				= AppUtils.DIR_OPNET64;
+		} else {
+			//unknown architecture
+			this.sysUtils.printlnErr("Unknown architecture '" + arch + "'", this.className + ", getCorrrectArchPath");
+			//use default path
+			path				= AppUtils.DIR_OPNET_BINS;
+		}
+		
+		//return the path
+		return(path);
+		
+	} // End String getCorrectArchLib
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
 	 * Run the specified command
 	 * 
-	 * @param		pCmd		the command identifier
-	 * @param		pParams		the parameters for the command
-	 * @return					the operation output
+	 * @param		pCmdAndParams	the command and its parameters for the command
+	 * @return						the operation output
 	 */
-	private String runCommand(int pCmd, String pParams){
+	private String runCommand(String... pCmdAndParams) throws Exception {
 		
-		//output
-		String		output		= "";
+		//avoid the null pointer exception
+		if (pCmdAndParams == null || pCmdAndParams.length == 0){
+			this.sysUtils.printlnErr("The command to run cannot be null or an empty string", this.className + ", runCommand");
+			return(null);
+		}		
 		
+		//local attributes
+		String			output		= null;				
+		String			errors		= null;
+		Process			proc		= null;
 		
+		//execute the command
+		try {
+			
+			//try to execute the command
+			proc					= Runtime.getRuntime().exec(pCmdAndParams);
+			
+			//get the errors
+			errors					= this.streamHandler(proc.getErrorStream());
+			
+			//check the errors and get the output
+			if (errors == null){
+				//get the output
+				output				= this.streamHandler(proc.getInputStream());
+			} else {
+				throw new Exception("Unable to run the command '" + pCmdAndParams[0] + "'" + this.lineBreak + " >> " + errors);		
+			}
+			
+		} catch (IOException e) {
+			//unable to run the command
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", runCommand");
+		}
+		
+		//return the result
 		return(output);		
 		
-	} // End boolean runCommand
+	} // End String runCommand
 		
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Parse the input stream into a string
+	 * 
+	 * @param	pStream			the input stream
+	 * @return					the resulting string
+	 */
+	private String streamHandler(InputStream pStream){
+		
+		//local attributes
+		StringBuffer		output		= new StringBuffer("");
+		InputStreamReader	isReader	= null;
+		BufferedReader		bReader		= null;
+		String				line		= null;
+		
+		//parse the input stream into a string
+	    try{
+	    	isReader					= new InputStreamReader(pStream);
+	    	bReader						= new BufferedReader(isReader);
+	    	line						= bReader.readLine();
+	    	
+	    	if (line != null){
+	    	
+	    		output.append(line);
+	    		line					= bReader.readLine();
+	    		
+	    		while (line != null){
+	    			output.append(this.lineBreak);
+		    		output.append(line);
+		    		line				= bReader.readLine();
+		    	}	    		
+	    		
+	    	} else {
+	    		return(null);
+	    	}
+	    	
+	    } catch (IOException e){
+	    	this.sysUtils.printlnErr(e.getMessage(), this.className + ", commandStreamHandler");
+	    }
+		
+		//return the value
+		return(output.toString());
+		
+	} // End String streamHandler
+	
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* OTHER METHODS: ADDITIONAL METHODS																			*/
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -730,6 +880,231 @@ public class AppUtils implements IAppUtils {
 		return(list);
 		
 	} // End Vector<String> getEFFiles 
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** 
+	 * Run the op_mksim command for the pParamsList
+	 * 
+	 * @param		pParamsList			the list of parameters for the command
+	 * @return							the console output
+	 */
+	public String runCommandMKSim(String pParamsList) throws Exception {
+		
+		//local attributes
+		String		console		= "";
+		String		output		= "";
+				
+		//try to run the command
+		console					= this.runCommand(this.getCorrectArchPath() + "op_mksim", pParamsList);
+		
+		if (console != null){
+			output				= console;
+		}
+		
+		//return the status flag
+		return(output);
+		
+	} // End runCommandMKSim
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** @return the help for the op_mksim command */
+	public String getMKSimHelp(){
+		
+		//local attributes
+		String		help		= "";
+		String		out			= null;
+		
+		//run op_mksim -help command and get the output
+		try {
+			out					= this.runCommand(this.getCorrectArchPath() + "op_mksim", "-help");
+		} catch (Exception e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getMKSimHelp");
+		}
+		
+		//check the output
+		if (out != null){
+			help				= out;
+		} else {
+			this.sysUtils.printlnErr("Unable to run the 'op_mksim -help' command", this.className + ", getMKSimHelp");
+		}
+		
+		//return the op_mksim help
+		return(help);
+		
+	} // End String getMKSimHelp
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** @return the help for the file pSimFileName */
+	public String getSimFileHelp(String pSimFileNameAndPath){
+		
+		//local attributes
+		String		help		= "";
+		String		out			= null;
+		
+		//run simFile -help command and get the output
+		try {
+			out					= this.runCommand(pSimFileNameAndPath, "-help");
+		} catch (Exception e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getSimFileHelp");
+		}
+		
+		//check the output
+		if (out != null){
+			help				= out;
+		} else {
+			this.sysUtils.printlnErr("Unable to run the sim file help command", this.className + ", getSimFileHelp");
+		}
+		
+		//return the sim file help
+		return(help);
+		
+		
+	} // End String getSimFileHelp
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Export the LD_LIBRARY_PATH
+	 */	
+	private void exportLD_LIB_PATH(){
+		
+		//local attributes
+		String 	console				= null;
+		String	fileName			= null;
+		boolean	deleted				= false;
+		
+		//try to run the command
+		try {
+			
+			//create the script file
+			fileName				= this.newBashScript("export LD_LIBRARY_PATH=" + this.getCorrectArchLib());
+			
+			//run the command
+			console					= this.runCommand("bash", fileName);
+			
+			//delete the script file
+			deleted					= this.deleteBashScript(fileName);
+			
+			//show the output (in this case correspond to errors)
+			if (console != null){
+				this.sysUtils.printlnErr(console, this.className + "exportLD_LIB_PATH (command run)");
+			} 
+			
+			//show an error if not deleted
+			if (!deleted){
+				this.sysUtils.printlnErr("Bash script file '" + fileName + "' not deleted", this.className + ", exportLD_LIB_PATH (delete)");
+			}
+			
+		} catch (Exception e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", exportLD_LIB_PATH (runCommand op)");
+		}
+		
+	} // End exportLD_LIB_PATH
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Create a new bash script file
+	 */
+	private String newBashScript(String pCmd){
+		
+		//local attributes
+		String 			fileDir			= null;
+		File			bashFile		= null;
+		PrintWriter		bashWriter		= null;
+		StringBuffer	bashScript		= null;
+		String			fullFileName	= null;
+		
+		//use the same file dir than the system log
+		fileDir							= this.sysUtils.getLog_file_dir();		
+				
+		//create the new bash script file
+		bashFile		 				= new File(fileDir, "ld_lib_path.sh");		
+		
+		//load the full file name
+		fullFileName					= bashFile.getAbsolutePath();
+		
+		//if there is no file, try to create it
+		if (!bashFile.exists()){
+			try {
+				bashFile.createNewFile();
+			} catch(IOException e) {
+				//cannot create the file
+				this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (exists)");
+				//abort
+				return(fullFileName);
+			}
+		}
+		
+		//verify that it can write the file
+		if (!bashFile.canWrite()){
+			//cannot write the file
+			this.sysUtils.printlnErr("Unable to write the bash script file", this.className + ", newBashScript (canWrite)");
+			//abort
+			return(fullFileName);
+		}
+		
+		//associate the PrintWriter to the log file
+		try {
+			bashWriter				= new PrintWriter(new FileWriter(bashFile.getPath()));
+		} catch(IOException e) {
+			//cannot associate the PrintWriter to the file
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (printWriter failed)");
+		}
+		
+		//load the script
+		bashScript					= new StringBuffer("");
+		bashScript.append("#!/bin/bash");
+		bashScript.append(this.lineBreak);
+		bashScript.append(this.lineBreak);
+		bashScript.append(pCmd);
+		bashScript.append(this.lineBreak);
+		bashScript.append(this.lineBreak);
+		
+		//write the file
+		bashWriter.write(bashScript.toString());
+		bashWriter.flush();
+		
+		//close the writer
+		bashWriter.close();
+		
+		//return the file name
+		return(fullFileName);
+		
+	} // End newBashScript
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Delete the bash script file pFileName
+	 */
+	private boolean deleteBashScript(String pFileName){
+		
+		//local attributes
+		boolean		status			= false;
+		File		bashFile		= null;
+		
+		//try to delete the bash script file
+		try{
+		
+			bashFile				= new File(pFileName);
+			bashFile.delete();		
+			
+			status					= true;
+			
+		} catch (NullPointerException e){
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", deleteBashScript");
+			return(status);
+		}	
+				
+		//return the operation status
+		return (status);
+		
+	} // End deleteBashScript
+	
 	
 	/*
 	================================================================================================================== 

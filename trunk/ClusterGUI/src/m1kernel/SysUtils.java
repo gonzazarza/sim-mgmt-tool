@@ -414,6 +414,12 @@ public class SysUtils implements ISysUtils {
 	/** @return the machineName */
 	@Override
 	public String getMachineName() { return machineName; }
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** @return the log_file_dir */
+	public String getLog_file_dir() { return log_file_dir; }
+	
 	
 		
 } // End class Utils

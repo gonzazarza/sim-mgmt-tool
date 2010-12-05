@@ -25,6 +25,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 //other classes
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Vector;
+
 import m1kernel.FilesTableModel;
 import m1kernel.OpnetProject;
 import m1kernel.PropsTableCellRenderer;
@@ -40,7 +44,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 //exceptions
 import java.awt.HeadlessException;
-
 import m1kernel.exceptions.OpnetLightException;
 import m1kernel.exceptions.OpnetStrongException;
 //abstract classes
@@ -53,7 +56,7 @@ import m1kernel.interfaces.ISysUtils;
  * Main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1028
+ * @version		2010.1102
  */
 public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener {
  
@@ -103,7 +106,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JTextArea					txMKSIMParams			= null;							//list of op_mksim command params
 	private JTextArea					txMKSIMHelp				= null;							//help of the op_mksim command
 	private final String				netsListHeader			= " * Select the network *";	//network names cb header
-	private final String				netsListEmpty			= " * No network selected *";	//network names cb empty item	
+	private final String				netsListEmpty			= " * No networks selected *";	//network names cb empty item	
 	//--- panel: sim file
 	private	JPanel						pDTSIM					= null;							//sim file panel
 	private JComboBox					cbSimsList				= null;							//sim file info combobox
@@ -112,7 +115,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JTextArea					txDTSIMParams			= null;							//sim file params
 	private JTextArea					txDTSIMHelp				= null;							//sim file help
 	private final String				simsListHeader			= " * Select the sim file *";	//sim files cb header
-	private final String				sismListEmpty			= " * No sim file selected *";	//sim files cb empty item
+	private final String				sismListEmpty			= " * No sim files selected *";	//sim files cb empty item
 	//--- panel: queue status
 	private JPanel						pQueue					= null;							//queue status panel
 	private JTextArea					txQueueStatus			= null;							//queue status info
@@ -294,6 +297,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppiRow2.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createTitledBorder(null, "Step 2"), 
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		//------ add listeners
+		this.bRunMKSIM.addActionListener(this);
 		//------ add components
 		ppiRow2.add(lRunMKSIM);
 		ppiRow2.add(Box.createHorizontalGlue());
@@ -478,7 +483,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow1			= new JPanel();
 		String				userPrompt		= " No output";
-		this.txAppOutput					= new JTextArea(userPrompt, 12, 60);
+		this.txAppOutput					= new JTextArea(userPrompt, 25, 60);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
@@ -582,7 +587,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.ckSelectAll					= new JCheckBox("Select all");
 		this.ckSelectNone					= new JCheckBox("Clear selection");
 		this.filesLabel						= new JLabel("");
-		this.updateFilesSelectedInfo(true);
+		this.initFilesSelectedInfo();
 		//------ set action listeners
 		this.ckSelectAll.addActionListener(this);
 		this.ckSelectNone.addActionListener(this);
@@ -668,7 +673,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(this.setPanelExtra(" Included network"));
+		pmNetInfo.add(this.setPanelExtra(" Included networks"));
 		pmNetInfo.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: title and space
@@ -680,7 +685,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ create components
 		this.cbNetsList						= new JComboBox();
 		this.bNetsSave						= new JButton("Save");
-		this.bNetsReset						= new JButton("Reset");
+		this.bNetsReset						= new JButton("Discard");
 		//------ add listeners
 		this.cbNetsList.addActionListener(this);
 		this.bNetsSave.addActionListener(this);
@@ -751,8 +756,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		JScrollPane		helpScroll			= new JScrollPane(this.txMKSIMHelp);
 		Font			helpFont			= this.txMKSIMHelp.getFont();
 		this.txMKSIMHelp.setEditable(false);
-		this.txMKSIMHelp.setLineWrap(true);
-		this.txMKSIMHelp.setFont(new Font(helpFont.getFamily(), Font.ITALIC, 12));
+		this.txMKSIMHelp.setFont(new Font(helpFont.getFamily(), Font.PLAIN, 10));
+		//------ load the op_mksim command help
+		this.txMKSIMHelp.setText(this.opProject.getMKSIMHelp());
 		//------ add components
 		pmhRow1.add(helpScroll);	
 		//------ add panel
@@ -810,7 +816,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ create components
 		this.cbSimsList						= new JComboBox();
 		this.bSimsSave						= new JButton("Save");
-		this.bSimsReset						= new JButton("Reset");
+		this.bSimsReset						= new JButton("Discard");
 		//------ add listeners
 		this.cbSimsList.addActionListener(this);
 		this.bSimsSave.addActionListener(this);
@@ -855,7 +861,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.txDTSIMParams					= new JTextArea("", 10, 60);
 		JScrollPane		paramsScroll		= new JScrollPane(this.txDTSIMParams);
 		this.txDTSIMParams.setEditable(true);
-		this.txDTSIMParams.setLineWrap(true);		
+		this.txDTSIMParams.setLineWrap(true);
 		//------ add components
 		pslCode.add(paramsScroll);
 		//------ add panel
@@ -891,8 +897,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ create components
 		this.txDTSIMHelp				= new JTextArea("", 12, 60);
 		JScrollPane		helpScroll		= new JScrollPane(this.txDTSIMHelp);
+		Font			helpFont		= this.txDTSIMHelp.getFont();
 		this.txDTSIMHelp.setEditable(false);
-		this.txDTSIMHelp.setLineWrap(true);		
+		this.txDTSIMHelp.setFont(new Font(helpFont.getFamily(), Font.PLAIN, 10));
 		//------ add components
 		pslHelp.add(helpScroll);
 		//------ add panel
@@ -1133,8 +1140,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, ClusterApp.STAT_DONE);
 					//apply actions
-					//--- print output
-					this.printProjectInfo();					
+														
 					//trigger steps
 					//--- nothing to do
 				} else {
@@ -1328,10 +1334,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//avoid the index out of range exception
 		if ((pPhase + 1) > this.statusData.length){
-			this.sysUtils.printlnErr(	"Index out of range (pPhase + 1 == " 		+ 
-										Integer.toString(pPhase)					+
-										", statusData.length == "					+
-										Integer.toString(this.statusData.length)	+
+			this.sysUtils.printlnErr(	"Index out of range (pPhase + 1 == " 			+ 
+										Integer.toString(pPhase)						+
+										", statusData.length == "						+
+										Integer.toString(this.statusData.length)		+
 										")", this.className + ", setNotAppliedStatus"
 									);
 			return;
@@ -1490,8 +1496,19 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			this.opProject.setNetworksMap();
 			
+			//load the data in the files table
+			this.filesModel.resetModel(null, this.opProject.getFilesData());
+			//update the files table
+			this.filesModel.fireTableDataChanged();
+			
+			//update the ef selected label
+			this.updateFilesSelectedInfo();
+			
+			//print project info
+			this.printProjectInfo();
+			
 		} catch (OpnetLightException e) {
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase2 (setNetworksMap)");
+			this.sysUtils.printlnWar(e.getMessage(), this.className + ", startPhase2 (setNetworksMap)");
 		} catch (OpnetStrongException e) {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase2 (setNetworksMap)");
 			opStatus					= false;
@@ -1501,6 +1518,23 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.actionTrigger(ClusterApp.STEP_2_LOAD_EF, opStatus);		
 		
 	} // End startPhase2
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Start the third phase of the system in order to run the op_mksim command 
+	 */
+	private void startPhase3(){
+		
+		//local attributes
+		boolean 	opStatus			= false;
+		
+		
+		
+		//triggers the corresponding phase and actions
+		this.actionTrigger(ClusterApp.STEP_3_RUN_MKSIM, opStatus);
+		
+	} // End startPhase3
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1528,6 +1562,52 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* 3rd-LEVEL METHODS: ATTRIBUTES SETUP FUNCTIONALITIES															*/
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
+	/** Update the list of unique networks selected */
+	private void updateNetsListContent(){
+		
+		//local attributes
+		Set<String>			netNames	= null;
+		Iterator<String>	it			= null;
+		
+		//clear the network names list
+		this.cbNetsList.removeAllItems();
+		this.cbNetsList.setEnabled(false);
+		
+		//check the number of ef files
+		if (this.opProject.getFilesDataLength() == 0){
+			this.cbNetsList.addItem(this.netsListEmpty);
+			return;
+		}
+			
+		//load the list
+		try{
+			//get the included net names list
+			netNames					= this.opProject.getSelectedNetworksNames();
+			
+			if (netNames != null){
+				//load the header
+				this.cbNetsList.addItem(this.netsListHeader);
+				//get the iterator
+				it						= netNames.iterator();
+				//load the network list
+				while (it.hasNext()){
+					this.cbNetsList.addItem(it.next());				
+				}
+				
+				//enable the list
+				this.cbNetsList.setEnabled(true);
+			} else {
+				//nothing to load
+				this.cbNetsList.addItem(this.netsListEmpty);
+			}
+			
+		} catch (OpnetStrongException e){
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateNetsListContent");
+			return;
+		}
+		
+		
+	} // End void updateNetsListContent
 	
 		
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -1555,12 +1635,33 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 	} // End void printProjectInfo
 	
+/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Initialize the ef files info label 
+	 */
+	private void initFilesSelectedInfo(){
+		
+		//info strings		
+		int				tableSize			= 0;
+		int				cellSelected		= 0;
+		String			filesNumber			= "0";
+		String			filesSelected		= "0";
+		
+		filesNumber							= "Files found: "		+ Integer.toString(tableSize);
+		filesSelected						= "Files selected: " 	+ Integer.toString(cellSelected);
+		
+		//set the label
+		this.filesLabel.setText("[ " + filesNumber + " ]   [ " + filesSelected + " ]");
+		
+	} // End void initFilesSelectedInfo
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
 	 * Update the ef files info label 
 	 */
-	private void updateFilesSelectedInfo(boolean pInitUpdate){
+	private void updateFilesSelectedInfo(){
 		
 		//info strings		
 		int				tableSize			= 0;
@@ -1570,29 +1671,26 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		boolean			cellValue			= false;
 		Object[][]		filesData			= null;
 		
-		//for the initial update there are no files loaded
-		if (!pInitUpdate){
-			//try to load the files data
-			try{
-				filesData						= this.opProject.getFilesData();
-			} catch (OpnetStrongException e) {
-				this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateFilesSelectedInfo");
-				return;
-			}			
-			
-			//load the real data
-			if (filesData != null){
-				tableSize						= filesData.length;
+		//try to load the files data
+		try{
+			filesData						= this.opProject.getFilesData();
+		} catch (OpnetStrongException e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateFilesSelectedInfo");
+			return;
+		}			
+		
+		//load the real data
+		if (filesData != null){
+			tableSize						= filesData.length;
+		}
+				
+		//count the number of selected cells
+		for (int i = 0; i < tableSize; i++){
+			cellValue						= (Boolean) filesData[i][1];
+			if (cellValue == true){ 
+				cellSelected++;
 			}
-					
-			//count the number of selected cells
-			for (int i = 0; i < tableSize; i++){
-				cellValue						= (Boolean) filesData[i][1];
-				if (cellValue == true){ 
-					cellSelected++;
-				}
-			}
-		}				
+		}					
 		
 		filesNumber							= "Files found: "		+ Integer.toString(tableSize);
 		filesSelected						= "Files selected: " 	+ Integer.toString(cellSelected);
@@ -1614,9 +1712,24 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		// TODO Auto-generated method stub
 		
-	}
+		//-----------------------------------------------------------------------------------------------
+		// tabbed pane changed
+		//---------------------------------------------------------------------------------------------
+		if (e.getSource() == this.tabbedPane){
+			
+			//get the pane title
+			JTabbedPane		pane			= (JTabbedPane) e.getSource();
+			String			title			= pane.getTitleAt(pane.getSelectedIndex());			
+						
+			//trigger the op_mksim pane update function
+			if (title == ClusterApp.TAB_3_MKSIM){
+				this.updateNetsListContent();
+			}
+			
+		}		
+		
+	} // End void stateChanged
 	
 	
 	/*
@@ -1639,17 +1752,133 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}		
 		
 		//-----------------------------------------------------------------------------------------------
+		//phase 3: run command op_mksim 
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bRunMKSIM){ 
+			this.startPhase3(); 
+		}
+		
+		//-----------------------------------------------------------------------------------------------
 		// clear console button
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bAppOutputClear){ 
 			this.txAppOutput.setText("");
 		}
 		
+		//-----------------------------------------------------------------------------------------------
+		// select all checkbox
+		//-----------------------------------------------------------------------------------------------
+		if ((this.filesTable.isEnabled()) && (e.getSource() == this.ckSelectAll)){			
+			
+			//get the files table data
+			Object[][]		localData		= null;
+			try {
+				localData					= this.opProject.getFilesData();
+			} catch (OpnetStrongException ex) {
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - get)");
+				return;
+			}
+			
+			//disable the select none checkbox
+			this.ckSelectNone.setSelected(false);
+			
+			//select files
+			for (int i = 0; i < this.opProject.getFilesDataLength(); i++){
+				localData[i][1]				= true;
+			}
+			
+			//set the data
+			try {
+				this.opProject.setFilesData(localData);
+			} catch (OpnetStrongException ex) {
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - set)");
+				return;
+			}
+			
+			//update table			
+			this.filesModel.resetModel(null, localData);
+			this.filesModel.fireTableDataChanged();
+			//update info label
+			this.updateFilesSelectedInfo();			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// select none checkbox
+		//-----------------------------------------------------------------------------------------------
+		if ((this.filesTable.isEnabled()) && (e.getSource() == this.ckSelectNone)){
+			
+			//get the files table data
+			Object[][]		localData		= null;
+	
+			try {
+				localData					= this.opProject.getFilesData();
+			} catch (OpnetStrongException ex) {
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - get)");
+				return;
+			}
+			
+			//disable the select all checkbox
+			this.ckSelectAll.setSelected(false);
+			
+			//unselect files
+			for (int i = 0; i < localData.length; i++){
+				localData[i][1]				= false;
+			}
+			
+			//set the data
+			try {
+				this.opProject.setFilesData(localData);
+			} catch (OpnetStrongException ex) {
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - set)");
+				return;
+			}
+			
+			//update table			
+			this.filesModel.resetModel(null, localData);
+			this.filesModel.fireTableDataChanged();
+			//update info label
+			this.updateFilesSelectedInfo();	
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// netlist combo box select
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbNetsList.isEnabled()) && (e.getSource() == this.cbNetsList)){
+			
+			JComboBox		combo				= (JComboBox) e.getSource();
+			String			netName				= (String) combo.getSelectedItem();
+			Vector<String>	params				= null;
+			
+			//avoid the selection of the header
+			if ((netName != null) && (netName != this.netsListHeader)){
+
+				//get the op_mksim command params
+				try{
+					//get the param
+					params						= this.opProject.getNetworkMKSIMCode(netName);
+					//clean the params area
+					this.txMKSIMParams.setText("");
+					//load the params
+					for (int i = 0; i < params.size(); i++){
+						this.txMKSIMParams.append(params.elementAt(i));
+						this.txMKSIMParams.append(this.lineBreak);
+					}
+					
+				} catch (OpnetStrongException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist select");
+					return;					
+				}
+				
+			} else {
+				//clear the output
+				this.txMKSIMParams.setText("");
+			}
+			
+		}
 		
 		
-		
-		// TODO Auto-generated method stub		
-	}
+	} // End actionPerformed
 	
 
 	/*
@@ -1663,49 +1892,137 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
-	}
+		//-----------------------------------------------------------------------------------------------
+		//object: files list table
+		//-----------------------------------------------------------------------------------------------		
+		if (e.getSource() == this.filesTable && this.filesTable.isEnabled()){
+			
+			//-------------------------------------------------------------------------------------------
+			//event single-click: update the label value
+			//-------------------------------------------------------------------------------------------
+			if ((e.getClickCount() == 1) && (e.getButton() == MouseEvent.BUTTON1)){
+				//get the cell info
+				JTable		grid				= (JTable) e.getSource();
+				int			row					= grid.getSelectedRow();
+				int 		col					= grid.getSelectedColumn();
+			
+				//check the column
+				if (col == ClusterApp.TF_COL_INCLUDE){					
+					String		fileName			= (String)	grid.getValueAt(row, ClusterApp.TF_COL_FILE_NAME);
+					boolean		isIncluded			= (Boolean) grid.getValueAt(row, ClusterApp.TF_COL_INCLUDE);
+					//update the corresponding table data	
+					try{
+						this.opProject.setIncluded(fileName, isIncluded);
+					} catch (OpnetStrongException ex) {
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - setIncluded)");
+						return;
+					}
+					//update table
+					try {
+						this.filesModel.resetModel(null, this.opProject.getFilesData());
+						this.filesModel.fireTableDataChanged();
+						
+					} catch (OpnetStrongException ex) {
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - get data)");
+						return;
+					}
+					//update the label value
+					this.updateFilesSelectedInfo();
+				}
+				
+			} //end single-click
+			
+			//-------------------------------------------------------------------------------------------
+			//event double-click: show the file content
+			//-------------------------------------------------------------------------------------------
+			if ((e.getClickCount() == 2) && (e.getButton() == MouseEvent.BUTTON1)){
+				
+				//get the row and column
+				JTable			list		= (JTable) e.getSource();
+				int				row			= list.getSelectedRow();
+				int				col			= list.getSelectedColumn();
+				
+				//check the column
+				if (col == ClusterApp.TF_COL_FILE_NAME){
+					String		fileName	= (String) list.getValueAt(row, ClusterApp.TF_COL_FILE_NAME);				
+					//avoid the null pointer exception
+					if (fileName == null){ 
+						//show error message
+						JOptionPane.showMessageDialog(
+								this.mainPanel,
+								"Unable to load the content of the file.",
+								"Wrong file name",
+								JOptionPane.ERROR_MESSAGE);
+						return; 
+					}
+				
+					//load the file content
+					try{
+						//try to load the content
+						String	content		= this.opProject.getEfFileContent(fileName);
+						//show the content
+						Font	filesFont		= this.txFileContent.getFont();
+						//prepare the text area
+						this.txFileContent.setEnabled(true);
+						this.txFileContent.setFont(new Font(filesFont.getFamily(), Font.PLAIN, 12));
+						this.txFileContent.setText("");
+						//--- title
+						this.txFileContent.append("File name: " + fileName);
+						this.txFileContent.append(this.lineBreak);
+						this.txFileContent.append(this.lineBreak);
+						//--- output
+						this.txFileContent.append(content);
+						
+					} catch (OpnetStrongException ex){
+						//show error message
+						JOptionPane.showMessageDialog(
+								this.mainPanel,
+								"Unable to load the content of the ef file (see log)",
+								"File load error",
+								JOptionPane.ERROR_MESSAGE);
+						//log error
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (double-click)");
+						return;
+					}
+				}
+			} // end double-click
+				
+		} 
+		
+	} // End mouseClicked
 
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
 	 */
 	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mouseEntered(MouseEvent e) { /* nothing to do */ }
 
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
 	 */
 	@Override
-	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	public void mouseExited(MouseEvent e) { /* nothing to do */ }
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
 	 */
 	@Override
-	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mousePressed(MouseEvent e) { /* nothing to do */ }
 
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
 	 */
 	@Override
-	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void mouseReleased(MouseEvent e) { /* nothing to do */ }
 
 	
 	/*
@@ -1719,29 +2036,123 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
-	}
+		//-----------------------------------------------------------------------------------------------
+		//object: files list table
+		//-----------------------------------------------------------------------------------------------	
+		if ((e.getSource() == this.filesTable) && (this.filesTable.isEnabled())){
+			
+			//-------------------------------------------------------------------------------------------
+			//event space bar key pressed: update the label value
+			//-------------------------------------------------------------------------------------------			
+			if (e.getKeyCode() == KeyEvent.VK_SPACE){
+				
+				//get the cell info
+				JTable		grid				= (JTable) e.getSource();
+				int			row					= grid.getSelectedRow();
+				int 		col					= grid.getSelectedColumn();
+			
+				//check the column
+				if (col == ClusterApp.TF_COL_INCLUDE){					
+					String		fileName			= (String)	grid.getValueAt(row, ClusterApp.TF_COL_FILE_NAME);
+					boolean		isIncluded			= (Boolean) grid.getValueAt(row, ClusterApp.TF_COL_INCLUDE);
+					//update the corresponding table data	
+					try{
+						this.opProject.setIncluded(fileName, isIncluded);
+					} catch (OpnetStrongException ex) {
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - setIncluded)");
+						return;
+					}
+					//update table
+					try {
+						this.filesModel.resetModel(null, this.opProject.getFilesData());
+						this.filesModel.fireTableDataChanged();
+						
+					} catch (OpnetStrongException ex) {
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - get data)");
+						return;
+					}
+					//update the label value
+					this.updateFilesSelectedInfo();
+				}
+				
+			} // end space key pressed
+			
+			//-------------------------------------------------------------------------------------------
+			//event enter key pressed: show the file content
+			//-------------------------------------------------------------------------------------------
+			if (e.getKeyCode() == KeyEvent.VK_ENTER){
+				
+				//get the row and column
+				JTable			list		= (JTable) e.getSource();
+				int				row			= list.getSelectedRow();
+				int				col			= list.getSelectedColumn();
+				
+				//check the column
+				if (col == ClusterApp.TF_COL_FILE_NAME){
+					String		fileName	= (String) list.getValueAt(row, ClusterApp.TF_COL_FILE_NAME);				
+					//avoid the null pointer exception
+					if (fileName == null){ 
+						//show error message
+						JOptionPane.showMessageDialog(
+								this.mainPanel,
+								"Unable to load the content of the file.",
+								"Wrong file name",
+								JOptionPane.ERROR_MESSAGE);
+						return; 
+					}
+				
+					//load the file content
+					try{
+						//try to load the content
+						String	content		= this.opProject.getEfFileContent(fileName);
+						//show the content
+						Font	filesFont		= this.txFileContent.getFont();
+						//prepare the text area
+						this.txFileContent.setEnabled(true);
+						this.txFileContent.setFont(new Font(filesFont.getFamily(), Font.PLAIN, 12));
+						this.txFileContent.setText("");
+						//--- title
+						this.txFileContent.append("File name: " + fileName);
+						this.txFileContent.append(this.lineBreak);
+						this.txFileContent.append(this.lineBreak);
+						//--- output
+						this.txFileContent.append(content);
+						
+					} catch (OpnetStrongException ex){
+						//show error message
+						JOptionPane.showMessageDialog(
+								this.mainPanel,
+								"Unable to load the content of the ef file (see log)",
+								"File load error",
+								JOptionPane.ERROR_MESSAGE);
+						//log error
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (double-click)");
+						return;
+					}
+				}
+				
+			} // end enter key pressed
+			
+		}
+		
+	} // End void keyPressed
 
-
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
 	/* (non-Javadoc)
 	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
 	 */
 	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void keyReleased(KeyEvent e) { /* nothing to do */ }
 
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/* (non-Javadoc)
 	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
 	 */
 	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void keyTyped(KeyEvent e) { /* nothing to do */ }
 	
 	
 	/*
