@@ -1001,8 +1001,7 @@ public class AppKernel implements IAppKernel, ActionListener, MouseListener, Key
 		
 	} // End setPanelHelp 
 	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
+	/* ------------------------------------------------------------------------------------------------------------ */	
 			
 	/** Set an extra panel to be used as section title 
 	 * 
@@ -1715,7 +1714,7 @@ public class AppKernel implements IAppKernel, ActionListener, MouseListener, Key
 			localVec.add((String) this.filesGridData[i][0]);
 		}
 		//--- parse the file names
-		this.allNets				= this.appUtils.parseNetworkNames(localVec, false);
+		this.allNets				= this.appUtils.parseFileNamesList(localVec, false);
 						
 		//load the default params for each network
 		for (int i = 0; i < filesNum; i++){
@@ -1820,7 +1819,7 @@ public class AppKernel implements IAppKernel, ActionListener, MouseListener, Key
 		}		
 		
 		//get the list of unique parsed network names
-		this.selectedNets				= this.appUtils.parseNetworkNames(filesnames, true);
+		this.selectedNets				= this.appUtils.parseFileNamesList(filesnames, true);
 		
 		//load the list
 		if ((this.selectedNets != null) && (this.selectedNets.size() > 0)){
@@ -2111,7 +2110,7 @@ public class AppKernel implements IAppKernel, ActionListener, MouseListener, Key
 					}
 				
 					//load the file
-					boolean 	opStatus		= this.appUtils.loadFile(this.projectPath, fileName);
+					boolean 	opStatus		= this.appUtils.loadFileContent(this.projectPath, fileName);
 				
 					//show the content
 					if (opStatus == true){
@@ -2247,7 +2246,7 @@ public class AppKernel implements IAppKernel, ActionListener, MouseListener, Key
 					}
 				
 					//load the file
-					boolean 	opStatus	= this.appUtils.loadFile(this.projectPath, fileName);
+					boolean 	opStatus	= this.appUtils.loadFileContent(this.projectPath, fileName);
 				
 					//show the content
 					if (opStatus == true){

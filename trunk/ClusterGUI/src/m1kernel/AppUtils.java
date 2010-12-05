@@ -4,6 +4,7 @@ package m1kernel;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 //exceptions
@@ -18,7 +19,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1025
+ * @version		2010.1027
  */
 public class AppUtils implements IAppUtils {
 
@@ -27,17 +28,18 @@ public class AppUtils implements IAppUtils {
 	Attributes
 	==================================================================================================================
 	*/
-	private String				className					= "";						//to store the name of the class
-	private String 				lineSeparator				= "";						//system line separator
-	private String				userHome						= "";						//user dir property
-	private ISysUtils			sysUtils					= null;						//system utilities class
-	private Vector<String>		fileList					= null;						//list of ef files
-	private Vector<String>		badFileList					= null;						//list of not valid ef files
-	private Vector<String>		networkNames				= null;						//list of network names
-	private String[][]			parsedNetworkNames			= null;						//list of parsed network names	
-	private File				efFile						= null;						//ef file
-	private BufferedReader		efReader					= null;						//ef file reader
-	private StringBuffer		efContents					= new StringBuffer("");		//ef file content
+	private ISysUtils						sysUtils				= null;				//system utilities class
+	private String							className				= "unknown";		//to store the name of the class
+	private String 							lineSeparator			= "";				//system line separator
+	private String							userHome				= "";				//user dir property	
+	private Vector<String>					efFileList				= null;				//list of ef files
+	private Vector<String>					badFileList				= null;				//list of not valid ef files
+	private Vector<String>					networkNames			= null;				//list of network names
+	private Vector<String>					uniqueNetworkNames		= null;				//list of unique network names
+	private String[][]						parsedNetworkNames		= null;				//list of parsed network names	
+	private HashMap<String,Vector<String>>	efFilesByNetworkNames	= null;				//list of ef files by network names
+	private StringBuffer					efContents				= null;				//ef file content
+	
 	
 	/*	
 	================================================================================================================== 
@@ -60,9 +62,14 @@ public class AppUtils implements IAppUtils {
 		this.sysUtils					= pSysUtils;
 		
 		//initializes the file list and network names vectors
-		this.fileList				= new Vector<String>();
+		this.efFileList				= new Vector<String>();
 		this.networkNames			= new Vector<String>();
+		this.uniqueNetworkNames		= new Vector<String>();
 		this.badFileList			= new Vector<String>();
+		
+		//other initializations
+		this.efFilesByNetworkNames	= new HashMap<String,Vector<String>>();
+		this.efContents				= new StringBuffer("");
 		
 		//informs the correct initialization of the class
 		this.sysUtils.printlnOut("Successful initialization", this.className);		
@@ -75,27 +82,40 @@ public class AppUtils implements IAppUtils {
 	Methods																										
 	==================================================================================================================
 	*/
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	/* LOAD METHODS: LOAD THE SET OF EF FILE LISTS																	*/
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
 	/** Load the list of ef files from the path
 	 * 
 	 * @param 	pPath			path to the ef files 
 	 */
 	public boolean loadFileList(String pPath){
 		
+		//status flag
+		boolean		status			= false;
+		
+		//local attributes
 		File		dir				= null; 
 		
+		
 		//avoid the null pointer exception
-		if (pPath == null){ return(false); }
+		if (pPath == null){
+			this.sysUtils.printlnWar("EF files path null", this.className + ", loadFileList");
+			return(status); 
+		}
 		
 		//try to open the file
 		try{
 			dir						= new File(pPath);
 		} catch (NullPointerException e){
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFileList");
-			return(false);
+			return(status);
 		}
 		
 		//reset the file list
-		this.fileList				= new Vector<String>();
+		this.efFileList				= new Vector<String>();
 		
 		//try to load the list
 		String[]	localList		= dir.list();
@@ -103,10 +123,13 @@ public class AppUtils implements IAppUtils {
 		//avoid the null pointer exception
 		if (localList == null){
 			this.sysUtils.printlnErr("Wrong path or project file name: " + pPath, this.className + ", loadFileList");
-			return(false);
+			return(status);
 		}
 		
-		if (localList.length == 0){ return(false); }
+		if (localList.length == 0){
+			this.sysUtils.printlnWar("EF Files list lenght == 0", this.className + ", loadFileList");
+			return(status); 
+		}
 		
 		//load the complete list of correct ef files
 		for (int i = 0; i < localList.length; i++){			
@@ -114,7 +137,7 @@ public class AppUtils implements IAppUtils {
 				
 				if (this.checkFileName(localList[i].toString())){
 					//correct file name
-					this.fileList.add(localList[i].toString());
+					this.efFileList.add(localList[i].toString());
 				} else {
 					//wrong file name
 					this.badFileList.add(localList[i].toString());
@@ -123,27 +146,143 @@ public class AppUtils implements IAppUtils {
 			}			
 		}		
 		
-		//load the parsed file names list
-		this.parseFileNames();
+		//load the parsed file names list, the network names list and the unique network names list
+		if (!this.loadNetworkNamesSetOfLists()){
+			this.sysUtils.printlnWar("Unable to load the network names set of lists", this.className + ", loadFileList");
+			return (status);
+		}
+		
+		//load the map of ef files associated to the network names
+		if (!this.loadNetworksMap()){
+			this.sysUtils.printlnWar("Unable to load the networks map", this.className + ", loadFileList");
+			return (status);
+		}
 		
 		//exit
-		return(true);
+		return(status);
 		
 	} // End load FilesList
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
-	/** Check if the ef file name is correct according to the OPNET 14.0 file name rules */	
+	/** Load the map of network names and their associated lists of ef files names  
+	 * 
+	 * @return				operation status
+	 */
+	private boolean loadNetworksMap(){
+		
+		//status flag
+		boolean			status		= false;
+		String			fileName	= "";
+		String			netName		= "";
+		Vector<String>	auxVec		= null;
+		
+		//avoid the null pointer exceptions
+		if (this.uniqueNetworkNames == null){
+			this.sysUtils.printlnWar("Unique network names == null", this.className + ", loadNetworksMap");
+			return(status);
+		}
+		if (this.efFileList == null){
+			this.sysUtils.printlnWar("EF files list == null", this.className + ", loadNetworksMap");
+			return(status);
+		}
+		
+		//step 1: load the list of unique network names
+		for (int i = 0; i < this.uniqueNetworkNames.size(); i++){			
+			this.efFilesByNetworkNames.put(this.uniqueNetworkNames.get(i), new Vector<String>());			
+		}
+		
+		status						= true;
+		
+		//step 2: load the set of ef files names
+		for (int i = 0; i < this.efFileList.size(); i++){
+			
+			fileName				= this.efFileList.get(i);
+			netName					= this.parseSingleFileName(fileName);
+					
+			if (netName != null){
+				//check if the file name is loaded
+				if (this.efFilesByNetworkNames.containsKey(netName)){
+					//get the list
+					auxVec			= new Vector<String>();
+					auxVec			= this.efFilesByNetworkNames.get(netName);
+					//update the list
+					auxVec.add(fileName);
+					//set the new list
+					this.efFilesByNetworkNames.put(netName, auxVec);
+					//clear the aux list
+					auxVec			= null;
+				} else {
+					//show a warning message
+					this.sysUtils.printlnWar("Net name '" + netName + "' not found in the unique list", this.className + ", loadNetworksMap");
+				}
+			} else {
+				//show an error message and abort the operation
+				this.sysUtils.printlnErr("Illegal net name", this.className + ", loadNetworksMap");
+				status				= false;	
+			}
+			
+		}		
+		
+		//exit
+		return(status);
+		
+	} // End loadNetworksMap
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Parse the file name pFileName
+	 * 
+	 * @param		pFileName	the file name to parse
+	 * @return					the parsed file name 
+	 */
+	public String parseSingleFileName(String pFileName){
+		
+		//local attributes
+		String		parsedName		= null;		
+		//OPNET info: "Scenario name may not contain '-' characters."
+		String[]	stringVec		= null;
+		
+		//avoid the null pointer exception
+		if (pFileName == null){	
+			this.sysUtils.printlnWar("File name to parse == null", this.className + ", parseSingleFileName");
+			return(parsedName); 
+		}
+		
+		stringVec					= pFileName.split(AppUtils.SPLIT_CHAR);
+		
+		//check the file name correctness
+		if (stringVec == null || stringVec.length < 3){
+			//shows a warning message
+			this.sysUtils.printlnWar("Ilegal ef file name '" + pFileName + "'", this.className + ", parseLocalFileName");
+		} else {
+			//parse the file name
+			parsedName				= stringVec[0] + AppUtils.SPLIT_CHAR + stringVec[1]; 
+		}		
+		
+		return (parsedName);		
+		
+	} // End parseSingleFileName
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	
+	
+	/** Check if the ef file name is correct according to the OPNET 14.0 file name rules
+	 * 
+	 * @param	pFileName	the file name to check
+	 * @return				operation status  
+	 */	
 	private boolean checkFileName(String pFileName){
 		
 		//operation flag
 		boolean		correct		= false;
 		//local attributes
 		//OPNET info: "Scenario name may not contain '-' characters."
-		String		splitChar	= "-";
 		String[]	stringVec	= null;
 		
-		stringVec				= pFileName.split(splitChar);
+		stringVec				= pFileName.split(AppUtils.SPLIT_CHAR);
 		
 		//check the file name correctness
 		if (stringVec == null || stringVec.length < 3){
@@ -157,104 +296,32 @@ public class AppUtils implements IAppUtils {
 		return (correct);
 		
 	} // End boolean checkFileName
-	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
-	/** Load the content of the ef file	 
-	 *
-	 * @param	pFilePath		input file path
-	 * @param	pFileName		input file name
-	 * @return					operation status
-	 */
-	public boolean loadFile(String pFilePath, String pFileName){
 		
-		boolean	extractStatus	= true;
-		boolean validPath		= !(pFilePath.equals(null));
-		boolean validName		= !(pFileName.equals(null));
-		int 	lineNum			= 0;
-		
-		//check the input file path and name
-		if (!validPath || !validName){ return (false); }
-		
-		//check if the file name is correct
-		if (!this.checkFileName(pFileName)){ return(false); }
-		
-		//try to open the input file
-		try{
-			this.efFile	= new File(pFilePath,pFileName);
-		} catch (NullPointerException e) {
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
-			return (false);
-		}
-	
-		//check if the file exists
-		if (!this.efFile.exists()){
-			//the file does not exist
-			this.sysUtils.printlnErr("Could not find the file: " + pFilePath + pFileName, this.className + ", loadFile");
-			return (false);
-		}
-		
-		//check if the file can be read
-		if (!this.efFile.canRead()){
-			//the file cannot be read
-			this.sysUtils.printlnErr("Could not read the file: " + pFilePath + pFileName, this.className + ", loadFile");			
-			return (false);
-		}
-	
-		//try to read the file
-		try{
-			//create the file buffered reader
-			this.efContents			= new StringBuffer("");
-			this.efReader			= new BufferedReader(new FileReader(this.efFile)); 
-			String	text			= this.efReader.readLine();
-		
-			while(text != null){				
-				//append the line number
-				this.efContents.append(" [Line " + ++lineNum + "]  ");
-				//append the data
-				this.efContents.append(text);
-				this.efContents.append(this.lineSeparator);
-				//read the next line
-				text				= this.efReader.readLine();
-			}
-		
-			//close the reader
-			this.efReader.close();
-			
-		} catch (FileNotFoundException e) {
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
-			return (false);
-		} catch (IOException e){
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
-			return (false);	
-		}
-								
-		//return the status of the data processing operation
-		return (extractStatus);
-		
-	} // End loadFile
-	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * Parse the list of ef file names
+	 * Parse the list of ef file names and load the networks names and the unique networks names lists 
 	 * 
 	 *  @return		the operation status
 	 */
-	private boolean parseFileNames(){
+	private boolean loadNetworkNamesSetOfLists(){
 		
 		//operation flag
 		boolean				status		= false;
 		
 		//avoid the null pointer exception
-		if (this.fileList == null){ return (status); }
+		if (this.efFileList == null){
+			this.sysUtils.printlnWar("EF Files list == null", this.className + ", loadNetworkNamesSetOfLists");
+			return (status); 
+		}
 		
 		//get the list of network names
 		//OPNET 14.0 info: "Scenario name may not contain '-' characters."
 		String[]			stringVec	= null;
-		Iterator<String>	it			= this.fileList.iterator();
+		Iterator<String>	it			= this.efFileList.iterator();
 		String				item		= "";
-		int					filesNum	= this.fileList.size();
+		String				netName		= "";
+		int					filesNum	= this.efFileList.size();
 		int					count		= 0;
 		//OPNET 14.0: file name structure (separated by '-')
 		// [0]: Project name
@@ -286,20 +353,114 @@ public class AppUtils implements IAppUtils {
 					this.parsedNetworkNames[count][1]	= stringVec[1];
 					//simulation id
 					this.parsedNetworkNames[count][2]	= stringVec[2];
+					// [0] + '-' + [1] = network name
+					netName								= this.parsedNetworkNames[count][0] + AppUtils.SPLIT_CHAR + this.parsedNetworkNames[count][1];
+					//load the network names list
+					this.networkNames.add(netName);
+					//load the unique network names list
+					if (this.uniqueNetworkNames.contains(netName)){
+						this.uniqueNetworkNames.add(netName);
+					}					
 					//updates counter
-					count++;				
+					count++;					
 				}				
 					
 			} catch (PatternSyntaxException e){
 				this.sysUtils.printlnErr(e.getMessage(), this.className + ", parseFileNames");
+				return (status);
 			}
 		}		
 		
+		status							= true;
+		
 		return (status);
 		
-	} // End parseFileNames
+	} // End loadNetworkNamesSetOfLists
 	
-/* ------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------ */
+	/* OUTPUT METHODS: LOAD AND OUTPUT METHODS																		*/
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** Load the content of the ef file	 
+	 *
+	 * @param	pFilePath		input file path
+	 * @param	pFileName		input file name
+	 * @return					operation status
+	 */
+	public boolean loadFileContent(String pFilePath, String pFileName){
+		
+		//local attributes
+		File			efFile			= null;
+		BufferedReader	efReader		= null;				
+		boolean			extractStatus	= false;
+		boolean 		validPath		= !(pFilePath.equals(null));
+		boolean 		validName		= !(pFileName.equals(null));
+		int 			lineNum			= 0;
+		
+		//check the input file path and name
+		if (!validPath || !validName){ return (extractStatus); }
+		
+		//check if the file name is correct
+		if (!this.checkFileName(pFileName)){ return(extractStatus); }
+		
+		//try to open the input file
+		try{
+			efFile						= new File(pFilePath,pFileName);
+		} catch (NullPointerException e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
+			return (extractStatus);
+		}
+	
+		//check if the file exists
+		if (!efFile.exists()){
+			//the file does not exist
+			this.sysUtils.printlnErr("Could not find the file: " + pFilePath + pFileName, this.className + ", loadFile");
+			return (extractStatus);
+		}
+		
+		//check if the file can be read
+		if (!efFile.canRead()){
+			//the file cannot be read
+			this.sysUtils.printlnErr("Could not read the file: " + pFilePath + pFileName, this.className + ", loadFile");			
+			return (extractStatus);
+		}
+	
+		//try to read the file
+		try{
+			//create the file buffered reader
+			this.efContents				= new StringBuffer("");
+			efReader					= new BufferedReader(new FileReader(efFile)); 
+			String	text				= efReader.readLine();
+		
+			while(text != null){				
+				//append the line number
+				this.efContents.append(" [Line " + ++lineNum + "]  ");
+				//append the data
+				this.efContents.append(text);
+				this.efContents.append(this.lineSeparator);
+				//read the next line
+				text					= efReader.readLine();
+			}
+		
+			extractStatus				= true;
+			
+			//close the reader
+			efReader.close();
+			
+		} catch (FileNotFoundException e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
+			return (extractStatus);
+		} catch (IOException e){
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", loadFile");
+			return (extractStatus);	
+		}
+								
+		//return the status of the data processing operation		
+		return (extractStatus);
+		
+	} // End loadFileContent
+		
+	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
 	 * Parse the list of file names in order to obtain the network names
@@ -308,7 +469,7 @@ public class AppUtils implements IAppUtils {
 	 * 	@param	pUniqueList		the unique list option flag
 	 *  @return					the parsed list of network names
 	 */
-	public Vector<String> parseNetworkNames(Vector<String> pFileList, boolean pUniqueList){
+	public Vector<String> parseFileNamesList(Vector<String> pFileList, boolean pUniqueList){
 		
 		//avoid the null pointer exception
 		if (pFileList == null){
@@ -364,7 +525,7 @@ public class AppUtils implements IAppUtils {
 		
 		return(parsedList);
 		
-	} // End parseNetworkNames
+	} // End parseFileNamesList
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 
@@ -373,46 +534,23 @@ public class AppUtils implements IAppUtils {
 		
 		//OPNET info: "Scenario name may not contain '-' characters."
 		StringBuffer		netNames	= new StringBuffer("");
-		String				names		= new String("");
 		int					count		= 0;
 		
 		//avoid the null pointer exception
-		if (this.parsedNetworkNames == null){ return (netNames.toString()); }
+		if (this.uniqueNetworkNames == null){ return (netNames.toString()); }
 		
 		//generates the console-style list of file names
-		for (int i = 0; i < this.parsedNetworkNames.length; i++){
-			// parsedNetworkNames list structure
-			// [0]: Project name
-			// [1]: Scenario name
-			// [2]: Simulation id
-						
-			// [0] + '-' + [1] = network name
-			names						= this.parsedNetworkNames[i][0] + AppUtils.SPLIT_CHAR + this.parsedNetworkNames[i][1];
-			
-			//check if the network name exists
-			if (!this.networkNames.contains(names)){
-				//save the network names list
-				this.networkNames.add(names);
-				//output
-				netNames.append(Integer.toString(++count) + ") " + names + this.lineSeparator);
-			}
-			
+		for (int i = 0; i < this.uniqueNetworkNames.size(); i++){			
+			netNames.append(Integer.toString(++count) + ") " + this.uniqueNetworkNames.get(i)+ this.lineSeparator);			
 		}
 	
 		//return the list of network names
 		return (netNames.toString());	
 		
 	} // End String getConsoleNetworkNames
-
-	/* ------------------------------------------------------------------------------------------------------------ */
-
-	/** @return the illegal file names flag */ 
-	public boolean existIllegalEFFileNames(){
-		
-		return(this.badFileList.size() > 0);
-		
-	} // End existIlLegalEFFileNames
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	/* COMMAND METHODS: RUN AND PARAMS SET METHODS																	*/
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
@@ -441,11 +579,11 @@ public class AppUtils implements IAppUtils {
 		//--- command 	
 		defParams.add(path + AppUtils.CMD_OP_MKSIM + bashEOF);
 		//--- param: env_db	
-		defParams.add("-env_db "		+ "'" + this.userHome + AppUtils.DIR_OPNET_ADMIN + AppUtils.FILE_NAME_ENV_DB + "'" + bashEOF);		
+		defParams.add("-env_db "	+ "'" + this.userHome + AppUtils.DIR_OPNET_ADMIN + AppUtils.FILE_NAME_ENV_DB + "'" + bashEOF);		
 		//--- param: net_name	
 		defParams.add("-net_name " 	+ pNetName + bashEOF);		
 		//--- param: opnet_dir	
-		defParams.add("-opnet_dir " 	+ AppUtils.DIR_OPNET_BINS);					
+		defParams.add("-opnet_dir "	+ AppUtils.DIR_OPNET_BINS);					
 		
 		//return the params list
 		return (defParams);		
@@ -558,7 +696,40 @@ public class AppUtils implements IAppUtils {
 		return(output);		
 		
 	} // End boolean runCommand
+		
+	/* ------------------------------------------------------------------------------------------------------------ */
+	/* OTHER METHODS: ADDITIONAL METHODS																			*/
+	/* ------------------------------------------------------------------------------------------------------------ */
 	
+	/** @return the illegal file names flag */ 
+	public boolean existIllegalEFFileNames(){		
+		return(this.badFileList.size() > 0);
+		
+	} // End existIlLegalEFFileNames
+	
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**	@return the list of ef files for the specified network name */
+	public Vector<String> getEFFiles(String pNetName){
+		
+		//local attributes
+		Vector<String>	list	= null;
+		
+		//avoid the null pointer exception
+		if (pNetName == null){ return(list); }
+		
+		//get the correct files list
+		if (this.efFilesByNetworkNames.containsKey(pNetName)){
+			list				= this.efFilesByNetworkNames.get(pNetName); 
+		} else {
+			//show a warning
+			this.sysUtils.printlnWar("Unable to load the supplementary environmental files lists", this.className + ", getEFFiles");
+		}		
+		
+		return(list);
+		
+	} // End Vector<String> getEFFiles 
 	
 	/*
 	================================================================================================================== 
@@ -566,20 +737,28 @@ public class AppUtils implements IAppUtils {
 	==================================================================================================================	
 	*/	
 	/** @return the fileList */
-	public Vector<String> getFileList() { return fileList; }
+	public Vector<String> getFileList() { return efFileList; }
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** @return the efContents */
 	public StringBuffer getEfContents() { return efContents; }
 
-
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
 	/** @return the networkNames */
 	public Vector<String> getNetworkNames() { return networkNames; }
 
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** @return the uniqueNetworkNames */
+	public Vector<String> getUniqueNetworkNames() { return uniqueNetworkNames; }
+
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** @return the parsedNetworkNames */
 	public String[][] getParsedNetworkNames() { return parsedNetworkNames; }
+
 	
 		
 } // End class AppUtils
