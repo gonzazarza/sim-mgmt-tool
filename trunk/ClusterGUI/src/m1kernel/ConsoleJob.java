@@ -4,7 +4,7 @@ package m1kernel;
  * Console job datatype
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1105
+ * @version		2010.1117
  */
 public class ConsoleJob {
 	
@@ -13,13 +13,8 @@ public class ConsoleJob {
 	Attributes																										
 	==================================================================================================================
 	*/
-	private StringBuffer				cOutput			= new StringBuffer("");			//console command output
-	private StringBuffer				cErrors			= new StringBuffer("");			//console command errors
-	//control attributes
-	private boolean						isOutputEnabled	= false;						//output enable flag
-	private boolean						isErrorsEnabled = false;						//errors enable flag
-	private boolean						isOutputNull	= false;						//output null flag
-	private boolean						isErrorsNull	= false;						//errors null flag
+	private String						stdout			= "";							//console command output
+	private String						stderr			= "";							//console command errors
 	
 	/*	
 	================================================================================================================== 
@@ -35,14 +30,45 @@ public class ConsoleJob {
 	Methods																										
 	==================================================================================================================
 	*/
-	/** */
+	/** @return the cOutput enabled value */
+	public boolean stdoutActive(){
+		
+		return (this.stdout != null && this.stdout != "");
+		
+	} // End boolean stdoutActive
 	
+	/** @return the cErrors enabled value */
+	public boolean stderrActive(){
+		
+		return (this.stderr != null && this.stderr != "");
+		
+	} // End boolean stderrActive
 	
 	/*	
 	================================================================================================================== 
 	Getters and Setters																										
 	==================================================================================================================
 	*/
-	
+	/** @return the output */
+	public String getStdout() { return stdout; }
+
+	/** @param pOutput the output to set */
+	public void setStdout(String pOutput) { 
+		
+		if (pOutput != null){
+			this.stdout = pOutput;
+		}
+	}
+
+	/** @return the errors */
+	public String getStderr() { return stderr; }
+
+	/** @param pErrors the errors to set */
+	public void setStderr(String pErrors) { 
+		
+		if (pErrors != null){
+			this.stderr = pErrors; 
+		}
+	}		
 
 } // End class ConsoleJob

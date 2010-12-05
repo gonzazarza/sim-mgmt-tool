@@ -20,7 +20,6 @@ public class OpnetJob {
 	private Vector<String>				efFileMKSIMCode			= new Vector<String>();		//ef file op_mksim code
 	private boolean						efFileMKSIMCompiled		= false;					//ef file op_mksim status
 	private String						simFileName				= "";						//sim file name
-	private boolean						simFileIncluded			= false;					//sim file status
 	private Vector<String>				simFileDTSIMCode		= new Vector<String>();		//sim file run code
 	private boolean						simFileQueueSent		= false;					//sim file queue sent status
 	private boolean						simFileQueueDone		= false;					//sim file queue done status 
@@ -78,14 +77,6 @@ public class OpnetJob {
 
 	/** @param simFileName the simFileName to set */
 	public void setSimFileName(String simFileName) { this.simFileName = simFileName; }
-
-
-	/** @return the simFileIncluded */
-	public boolean isSimFileIncluded() { return simFileIncluded; }
-
-
-	/** @param simFileIncluded the simFileIncluded to set */
-	public void setSimFileIncluded(boolean simFileIncluded) { this.simFileIncluded = simFileIncluded; }
 
 
 	/** @return the simFileDTSIMCode */

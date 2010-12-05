@@ -14,8 +14,10 @@ public interface ISysUtils {
 	Static Attributes																										
 	==================================================================================================================
 	*/
-	static final String 		LOG_FILE_NAME				= "ClusterGUI.log";				//log file name
-	static final String			DIR_OPT_USER_HOME			= "/home/gzarza/";				//optional user home dir
+	/** log file name */
+	static final String 		LOG_FILE_NAME				= "ClusterGUI.log";	
+	/** optional user home dir */
+	static final String			DIR_OPT_USER_HOME			= "/home/gzarza/";	
 	
 	
 	/*	
@@ -50,25 +52,22 @@ public interface ISysUtils {
 	/** Prints the error string on the console and (or) the log file
 	 * 
 	 * @param text			Error text string
-	 * @param className		Name of the invoking class
 	 */
-	void printErr(String text, String className);
+	void printErr(String text);
 	
 	
 	/** Prints the message string on the console and (or) the log file
 	 * 
 	 * @param text			Message text string
-	 * @param className		Name of the invoking class
 	 */
-	void printOut(String text, String className);
+	void printOut(String text);
 	
 	
 	/** Prints the warning string on the console and (or) the log file
 	 * 
 	 * @param text			warning text string
-	 * @param className		Name of the invoking class
 	 */
-	void printWar(String text, String className);
+	void printWar(String text);
 	
 	
 	/** Closes the log file and updates its flag */

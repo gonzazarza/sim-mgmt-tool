@@ -34,7 +34,11 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 	Constructor
 	==================================================================================================================
 	*/
-	/** Class constructor */
+	/** Class constructor 
+	 *
+	 * @param	pSysUtils				the system utilities class
+	 * 
+	 */
 	public PropsTableCellRenderer(ISysUtils pSysUtils){
 		
 		//gets and stores the name of the class
@@ -80,7 +84,7 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 			//set horizontal alignment for every status
 			this.setHorizontalAlignment(SwingConstants.CENTER);
 			
-			if (value.equals(AppKernel.STAT_NOT_APPLIED)){
+			if (value.equals(AppUtils.STAT_NOT_APPLIED)){
 				//cell color
 				cell.setBackground(AppUtils.COLOR_NOT_APPLIED);
 				//font color
@@ -88,7 +92,7 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 				//font style
 				cell.setFont(new Font(fOld.getFamily(), Font.PLAIN, fOld.getSize()));
 				
-			} else if (value.equals(AppKernel.STAT_DONE)){
+			} else if (value.equals(AppUtils.STAT_DONE)){
 				//cell color
 				cell.setBackground(AppUtils.COLOR_DONE);
 				//font color
@@ -96,7 +100,7 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 				//font style
 				cell.setFont(new Font(fOld.getFamily(), Font.PLAIN, fOld.getSize()));
 				
-			} else if (value.equals(AppKernel.STAT_FAIL)){
+			} else if (value.equals(AppUtils.STAT_FAIL)){
 				//cell color
 				cell.setBackground(AppUtils.COLOR_FAIL);
 				//font color
@@ -104,6 +108,13 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 				//font style
 				cell.setFont(new Font(fOld.getFamily(), Font.PLAIN, fOld.getSize()));
 				
+			} else if (value.equals(AppUtils.STAT_RUNNING)){
+				//cell color
+				cell.setBackground(AppUtils.COLOR_RUNNING);
+				//font color
+				cell.setForeground(Color.WHITE);
+				//font style
+				cell.setFont(new Font(fOld.getFamily(), Font.PLAIN, fOld.getSize()));
 			}
 		}
 		

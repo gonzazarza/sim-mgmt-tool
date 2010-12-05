@@ -30,7 +30,13 @@ public class PropsTableModel extends AbstractTableModel {
 	Constructor
 	==================================================================================================================
 	*/
-	/** Class constructor */
+	/** Class constructor 
+	 *
+	 * @param 	pSysUtils 				the system utilities class
+	 * @param 	pData 					the table data
+	 * @param	pColumnNames 			the table column headers
+	 *
+	 */
 	public PropsTableModel(ISysUtils pSysUtils, Object[][] pData, String[] pColumnNames){
 		
 		//get and stores the name of the class
@@ -56,7 +62,7 @@ public class PropsTableModel extends AbstractTableModel {
 	*/
 	/** Reset the table model data and column names 
 	 * 
-	 * @param	pColumName			the new columnNames
+	 * @param	pColumnNames		the new columnNames
 	 * @param	pData				the new data
 	 * @return						the operation status
 	 */
@@ -116,7 +122,7 @@ public class PropsTableModel extends AbstractTableModel {
     
 	/* ------------------------------------------------------------------------------------------------------------ */
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     /** @return the column class */
 	public Class getColumnClass(int c) {
          return getValueAt(0, c).getClass();

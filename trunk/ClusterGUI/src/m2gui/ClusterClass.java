@@ -1,10 +1,13 @@
 package m2gui;
 
+//classes
+import java.awt.Color;
+
 /** 
  * Abstract class including the static values for the main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1029
+ * @version		2010.1118
  */
 public abstract class ClusterClass {
 	
@@ -26,10 +29,6 @@ public abstract class ClusterClass {
 	//files grid column ids
 	static final int		TF_COL_FILE_NAME	= 0;							//file table column file name id
 	static final int		TF_COL_INCLUDE		= 1;							//file table column include id
-	//app properties states
-	static final String		STAT_NOT_APPLIED	= "....";						//not applied status
-	static final String		STAT_DONE			= "DONE";						//done status
-	static final String		STAT_FAIL			= "FAILED";						//fail status
 	//static labels
 	static final String		LABEL_LOAD_PRJ		= "Load project";				//load project label
 	static final String		LABEL_LOAD_EF		= "Load file list";				//load ef file list label
@@ -47,10 +46,16 @@ public abstract class ClusterClass {
 	//tabbed pane titles
 	static final String		TAB_1_PRJ			= "OPNET Project";				//tab 1: opnet project
 	static final String		TAB_2_EF			= "File list (*.ef)";			//tab 2: ef file list
-	static final String		TAB_3_MKSIM			= "Options op_mksim";			//tab 3: params op_mksim
-	static final String		TAB_4_SIM			= "Options sim files";			//tab 4: params sim files
+	static final String		TAB_3_MKSIM			= "Setup op_mksim";				//tab 3: params op_mksim
+	static final String		TAB_4_SIM			= "Setup sim files";			//tab 4: params sim files
 	static final String		TAB_5_QUEUE			= "Jobs queue";					//tab 5: jobs queue
-	static final String		TAB_6_ABOUT			= "?";							//tab 6: about/help	
+	static final String		TAB_6_ABOUT			= "? ";							//tab 6: about/help
+	//system output text area identifier
+	static final int		TX_STDOUT			= 0;							//normal output
+	static final int		TX_STDERR			= 1;							//error output
+	//system output text area colors
+	static final Color		TX_COLOR_STDOUT		= new Color(000, 000, 000);		//normal output color
+	static final Color		TX_COLOR_STDERR		= new Color(255, 000, 000);		//error output color
 	
 	
 	/*	

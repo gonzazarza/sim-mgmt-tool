@@ -7,7 +7,7 @@ import javax.swing.JPanel;
  * Interface to access to the application kernel class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1025
+ * @version		2010.1116
  */
 public interface IAppKernel {
 	
@@ -16,6 +16,7 @@ public interface IAppKernel {
 	Static Attributes																										
 	==================================================================================================================	
 	*/
+
 	//table identifiers
 	static final int		TABLE_PROPS			= 0;							//properties table type
 	static final int		TABLE_FILES			= 1;							//file table type
@@ -33,6 +34,7 @@ public interface IAppKernel {
 	static final String		STAT_NOT_APPLIED	= "....";						//not applied status
 	static final String		STAT_DONE			= "DONE";						//done status
 	static final String		STAT_FAIL			= "FAILED";						//fail status
+	static final String		STAT_RUNNING		= "Running";					//running status
 	//static labels
 	static final String		LABEL_LOAD_PRJ		= "Load project";				//load project label
 	static final String		LABEL_LOAD_EF		= "Load file list";				//load ef file list label

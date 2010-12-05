@@ -3,12 +3,12 @@ package m1kernel.exceptions;
 //abstract classes
 
 /** 
- * Opnet project exception
+ * Opnet project heavy exception
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
  * @version		2010.1026
  */
-public class OpnetStrongException extends OpnetExceptionClass {
+public class OpnetHeavyException extends OpnetExceptionClass {
 
 	/*	
 	================================================================================================================== 
@@ -28,8 +28,10 @@ public class OpnetStrongException extends OpnetExceptionClass {
 	*/
 	/**
 	 * Class constructor
+	 * 
+	 * @param		pException			the exception message
 	 */
-	public OpnetStrongException(String pException){
+	public OpnetHeavyException(String pException){
 		
 		//call superclass constructor
 		super(pException);
@@ -40,21 +42,6 @@ public class OpnetStrongException extends OpnetExceptionClass {
 		
 		
 	} // End constructor
-
-	/**
-	 * Class constructor
-	 */
-	public OpnetStrongException(String pException, String pTitle){
-		
-		//call superclass constructor
-		super(pException);
-		//save exception message
-		this.message		= pException;
-		//save exception title
-		this.title			= pTitle;
-		
-	} // End constructor
-	
 
 	/*	
 	================================================================================================================== 
@@ -73,4 +60,4 @@ public class OpnetStrongException extends OpnetExceptionClass {
 	public int getType() { return type; }	
 	
 		
-} // End OpnetException
+} // End OpnetHeavyException

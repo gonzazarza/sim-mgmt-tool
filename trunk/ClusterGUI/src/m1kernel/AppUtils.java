@@ -24,7 +24,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1103
+ * @version		2010.1118
  */
 public class AppUtils implements IAppUtils {
 
@@ -44,6 +44,8 @@ public class AppUtils implements IAppUtils {
 	private String[][]						parsedNetworkNames		= null;				//list of parsed network names	
 	private HashMap<String,Vector<String>>	efFilesByNetworkNames	= null;				//list of ef files by network names
 	private StringBuffer					efContents				= null;				//ef file content
+	//logic control attributes
+	private boolean							removeAuxFiles			= true;				
 	
 	
 	/*	
@@ -51,7 +53,11 @@ public class AppUtils implements IAppUtils {
 	Constructor
 	==================================================================================================================
 	*/
-	/** Class constructor */
+	/** Class constructor
+	 * 
+	 * @param		pSysUtils				the system utilities class
+	 *  
+	 */
 	public AppUtils(ISysUtils pSysUtils){
 		
 		//get the system line separator
@@ -95,6 +101,8 @@ public class AppUtils implements IAppUtils {
 	/** Load the list of ef files from the path
 	 * 
 	 * @param 	pPath			path to the ef files 
+	 * @return					the operation status
+	 * 
 	 */
 	public boolean loadFileList(String pPath){
 		
@@ -169,8 +177,66 @@ public class AppUtils implements IAppUtils {
 		//exit
 		return(status);
 		
-	} // End load FilesList
+	} // End boolean load FilesList
 
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/**
+	 * Return the list of sim files in the specified path
+	 * 
+	 * @param		pPath				the path to search
+	 * @return 							the list of sim files found in the pPath
+	 */
+	public Vector<String> getSimFilesList(String pPath){
+		
+		//local attributes
+		File			dir				= null; 
+		String[]		localList		= null;
+		Vector<String>	simList			= new Vector<String>();
+		
+		
+		//avoid the null pointer exception
+		if (pPath == null){
+			this.sysUtils.printlnWar("Sim files path null", this.className + ", getSimFilesList");
+			return(null); 
+		}
+		
+		//try to open the dir
+		try{
+			dir						= new File(pPath);
+		} catch (NullPointerException e){
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getSimFilesList");
+			return(null);
+		}
+				
+		//try to load the list
+		localList					= dir.list();
+		
+		//avoid the null pointer exception
+		if (localList == null){
+			this.sysUtils.printlnErr("Wrong path or project file name: " + pPath, this.className + ", getSimFilesList");
+			return(null);
+		}
+		
+		//fast result
+		if (localList.length == 0){
+			return(simList); 
+		}
+		
+		//load the complete list of sim files
+		for (int i = 0; i < localList.length; i++){	
+			//check the file extension
+			if (localList[i].endsWith(AppUtils.SUFFIX_SIM_FILE)){
+				simList.add(localList[i]);
+			}			
+		}
+		
+		//return the list
+		return(simList);
+		
+	} // End Vector<String> getSimFilesList
+	
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** Load the map of network names and their associated lists of ef files names  
@@ -653,6 +719,7 @@ public class AppUtils implements IAppUtils {
 		
 		//local attributes
 		int				machine	= AppUtils.MACHINE_UNKNOWN;
+		ConsoleJob		output	= null;
 		String			arch	= "";
 		//arch outputs
 		Vector<String>	m32		= new Vector<String>();
@@ -667,7 +734,15 @@ public class AppUtils implements IAppUtils {
 		
 		//run the uname -m command to get the machine time
 		try {
-			arch				= this.runCommand("uname", "-m");
+			output				= this.runCommand("uname", "-m");
+			
+			//get the arch
+			if (output.stdoutActive()){
+				arch			= output.getStdout();
+			} else {
+				arch			= "unknown";
+			}
+			
 		} catch (Exception e) {
 			//show the error
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchType");
@@ -700,9 +775,9 @@ public class AppUtils implements IAppUtils {
 	 * Run the specified command
 	 * 
 	 * @param		pCmdAndParams	the command and its parameters for the command
-	 * @return						the operation output
+	 * @return						the operation output and error streams
 	 */
-	private String runCommand(String... pCmdAndParams) throws Exception {
+	private ConsoleJob runCommand(String... pCmdAndParams) throws Exception {
 		
 		//avoid the null pointer exception
 		if (pCmdAndParams == null || pCmdAndParams.length == 0){
@@ -711,8 +786,9 @@ public class AppUtils implements IAppUtils {
 		}		
 		
 		//local attributes
-		String			output		= null;				
+		ConsoleJob		consoleOut	= new ConsoleJob();				
 		String			errors		= null;
+		String			output		= null;
 		Process			proc		= null;		
 		
 		//execute the command
@@ -724,21 +800,20 @@ public class AppUtils implements IAppUtils {
 			//get the errors
 			errors					= this.streamHandler(proc.getErrorStream());
 			
-			//check the errors and get the output
-			if (errors == null){
-				//get the output
-				output				= this.streamHandler(proc.getInputStream());
-			} else {
-				throw new Exception(errors);		
-			}
-						
+			//get the output	
+			output					= this.streamHandler(proc.getInputStream()); 
+			
+			//set the errors and output
+			consoleOut.setStdout(output);
+			consoleOut.setStderr(errors);
+									
 		} catch (IOException e) {
 			//unable to run the command
 			throw new Exception(e.getMessage() + "(>> from runCommand)");
 		}
 		
 		//return the result
-		return(output);		
+		return(consoleOut);		
 		
 	} // End String runCommand
 	
@@ -749,16 +824,16 @@ public class AppUtils implements IAppUtils {
 	 * 
 	 * @param	pCmdAndParams	the main command of the script
 	 * @param	pPath			the project path
-	 * @return					the operation output
+	 * @return					the operation output as ConsoleJob
 	 */
-	private String runBashScript(String pCmdAndParams, String pPath){
+	private ConsoleJob runBashScript(String pCmdAndParams, String pPath){
 		
 		//local attributes
 		int			machine			= AppUtils.MACHINE_UNKNOWN;
 		String		mPath			= "";
 		String		mLibs			= "";
 		String		bashFileName	= "";
-		String		output			= null;
+		ConsoleJob	output			= new ConsoleJob();
 		boolean		fileRemoved		= false;
 		
 		//avoid the null pointer exception
@@ -800,13 +875,17 @@ public class AppUtils implements IAppUtils {
 			output					= this.runCommand("bash", bashFileName);
 		} catch (Exception e) {
 			this.sysUtils.printlnErr("Unable to run the bash script file due to errors (see below)", this.className + ", runBashScript");
-			this.sysUtils.printlnErr(e.getMessage(), "");
+			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr(e.getMessage(), null);
+			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
 			//abort the operation
-			return(e.getMessage());
+			return(output);
 		}
 		
 		//delete the bash script file
-		fileRemoved					= this.deleteBashScript(bashFileName);
+		if (this.removeAuxFiles){
+			fileRemoved				= this.deleteBashScript(bashFileName);
+		}
 		//--- show an error if not deleted
 		if (!fileRemoved){
 			this.sysUtils.printlnErr("Bash script file '" + bashFileName + "' not removed!", this.className + ", runBashScript");
@@ -905,34 +984,36 @@ public class AppUtils implements IAppUtils {
 	 * 
 	 * @param		pPath				the project path
 	 * @param		pCmdAndParamsList	the command and the list of parameters for the command
-	 * @return							the console output
+	 * @return							the console output and error streams
 	 */
-	public String runCommandMKSim(String pPath, String pCmdAndParamsList){
+	public ConsoleJob runCommandMKSim(String pPath, String pCmdAndParamsList){
 		
 		//local attributes
-		String		console			= "";
-		String		output			= null;
+		ConsoleJob	consoleOut		= null;
 				
 		//try to run the command
-		console						= this.runBashScript(pCmdAndParamsList, pPath);
-		//--- load the output
-		if (console != null){
-			output				= console;
+		consoleOut					= this.runBashScript(pCmdAndParamsList, pPath);
+
+		//check the output
+		if (consoleOut.stderrActive()){
+			this.sysUtils.printlnErr("Unable to run the 'op_mksim' command due to erros (see below)", this.className + ", runCommandMKSim");
+			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr(consoleOut.getStderr(), null);
+			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
 		}
 		
 		//return the status flag
-		return(output);
+		return(consoleOut);
 		
 	} // End runCommandMKSim
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** @return the help for the op_mksim command */
-	public String getMKSimHelp(){
+	public ConsoleJob getMKSimHelp(){
 		
 		//local attributes
-		String		help		= "";
-		String		out			= null;
+		ConsoleJob	out			= new ConsoleJob();
 		
 		//run op_mksim -help command and get the output
 		try {			
@@ -942,42 +1023,43 @@ public class AppUtils implements IAppUtils {
 		}
 		
 		//check the output
-		if (out != null){
-			help				= out;
-		} else {
-			this.sysUtils.printlnErr("Unable to run the 'op_mksim -help' command", this.className + ", getMKSimHelp");
+		if (out.stderrActive()){
+			this.sysUtils.printlnErr("Unable to run the 'op_mksim -help' command due to erros (see below)", this.className + ", getMKSimHelp");
+			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr(out.getStderr(), null);
+			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
 		}
 		
 		//return the op_mksim help
-		return(help);
+		return(out);
 		
 	} // End String getMKSimHelp
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** @return the help for the file pSimFileName */
-	public String getSimFileHelp(String pSimFileNameAndPath){
+	public ConsoleJob getSimFileHelp(String pSimFileName){
 		
 		//local attributes
-		String		help		= "";
-		String		out			= null;
+		ConsoleJob	out			= null;
 		
 		//run simFile -help command and get the output
 		try {
-			out					= this.runBashScript(pSimFileNameAndPath + " -help", null);
+			out					= this.runBashScript(pSimFileName + " -help", null);
 		} catch (Exception e) {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getSimFileHelp");
 		}
 		
 		//check the output
-		if (out != null){
-			help				= out;
-		} else {
-			this.sysUtils.printlnErr("Unable to run the sim file help command", this.className + ", getSimFileHelp");
+		if (!out.stdoutActive()){
+			this.sysUtils.printlnErr("Unable to run the sim file help command due to errors (see below)", this.className + ", getSimFileHelp");
+			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr(out.getStderr(), null);
+			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
 		}
 		
 		//return the sim file help
-		return(help);
+		return(out);
 		
 		
 	} // End String getSimFileHelp
@@ -1006,7 +1088,7 @@ public class AppUtils implements IAppUtils {
 		fileDir							= this.sysUtils.getLog_file_dir();		
 				
 		//create the new bash script file
-		bashFile		 				= new File(fileDir, "ld_lib_path.sh");		
+		bashFile		 				= new File(fileDir, "aux_script_file.sh");		
 		
 		//load the full file name
 		fullFileName					= bashFile.getAbsolutePath();

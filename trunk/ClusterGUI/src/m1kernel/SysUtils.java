@@ -105,8 +105,12 @@ public class SysUtils implements ISysUtils {
 	 * @param className		Name of the invoking class
 	 */
 	@Override
-	public void printlnErr(String text, String className){		
-		this.println("err", (text + "  [Class " + className + "] "));
+	public void printlnErr(String text, String className){	
+		if (className != null){
+			this.println("err", (text + "  [Class " + className + "] "));
+		} else {
+			this.println("err", (text));
+		}
 	} // End printlnErr
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -117,7 +121,11 @@ public class SysUtils implements ISysUtils {
 	 */
 	@Override
 	public void printlnOut(String text, String className){
-		this.println("out", (text + "  [Class " + className + "] "));
+		if (className != null){
+			this.println("out", (text + "  [Class " + className + "] "));
+		} else {
+			this.println("out", (text));
+		}
 	} // End printlnOut
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -128,7 +136,11 @@ public class SysUtils implements ISysUtils {
 	 */
 	@Override
 	public void printlnWar(String text, String className){
-		this.println("war", (text + "  [Class " + className + "] "));
+		if (className != null){
+			this.println("war", (text + "  [Class " + className + "] "));
+		} else {
+			this.println("war", (text));
+		}
 	} // End printlnWar
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -138,8 +150,8 @@ public class SysUtils implements ISysUtils {
 	 * @param text			Error text string
 	 */
 	@Override
-	public void printErr(String text, String className){
-		this.print("err", (text + "  [Class " + className + "] "));
+	public void printErr(String text){
+		this.print("err", (text));	
 	} // End printErr
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -149,8 +161,8 @@ public class SysUtils implements ISysUtils {
 	 * @param text			Message text string
 	 */
 	@Override
-	public void printOut(String text, String className){
-		this.print("out", (text + "  [Class " + className + "] "));
+	public void printOut(String text){
+		this.print("out", (text));
 	} // End printOut
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -160,8 +172,8 @@ public class SysUtils implements ISysUtils {
 	 * @param text			warning text string
 	 */
 	@Override
-	public void printWar(String text, String className){
-		this.print("war", (text + "  [Class " + className + "] "));
+	public void printWar(String text){
+		this.print("war", (text));
 	} // End printWar
 	
 	/* ------------------------------------------------------------------------------------------------------------ */

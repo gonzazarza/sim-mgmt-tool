@@ -13,6 +13,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.text.Document;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -24,11 +25,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-//other classes
+//util classes
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-
+//other classes
 import m1kernel.FilesTableModel;
 import m1kernel.OpnetProject;
 import m1kernel.PropsTableCellRenderer;
@@ -42,13 +43,16 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 //exceptions
 import java.awt.HeadlessException;
 import m1kernel.exceptions.OpnetLightException;
-import m1kernel.exceptions.OpnetStrongException;
+import m1kernel.exceptions.OpnetHeavyException;
 //abstract classes
 import m2gui.ClusterClass;
 //interfaces
+import m1kernel.interfaces.IAppUtils;
 import m1kernel.interfaces.IOpnetProject;
 import m1kernel.interfaces.ISysUtils;
 
@@ -56,9 +60,9 @@ import m1kernel.interfaces.ISysUtils;
  * Main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1102
+ * @version		2010.1119
  */
-public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener {
+public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener, DocumentListener {
  
 	/*	
 	================================================================================================================== 
@@ -104,6 +108,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bNetsReset				= null;							//net file reset button
 	private JButton						bNetsSave				= null;							//net file save button
 	private JTextArea					txMKSIMParams			= null;							//list of op_mksim command params
+	private Document					deMKSIMParams			= null;							//op_mksim params document
 	private JTextArea					txMKSIMHelp				= null;							//help of the op_mksim command
 	private final String				netsListHeader			= " * Select the network *";	//network names cb header
 	private final String				netsListEmpty			= " * No networks selected *";	//network names cb empty item	
@@ -113,6 +118,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bSimsReset				= null;							//sim file reset button
 	private JButton						bSimsSave				= null;							//sim file save button
 	private JTextArea					txDTSIMParams			= null;							//sim file params
+	private Document					deDTSIMParams			= null;							//sun file params documment
 	private JTextArea					txDTSIMHelp				= null;							//sim file help
 	private final String				simsListHeader			= " * Select the sim file *";	//sim files cb header
 	private final String				sismListEmpty			= " * No sim files selected *";	//sim files cb empty item
@@ -128,7 +134,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	Constructor
 	==================================================================================================================
 	*/
-	/** Class constructor */
+	/** Class constructor
+	 *
+	 * @param		pUtils				the system utilities class 
+	 */
 	public ClusterApp (ISysUtils pUtils){
 		
 		//set the utilities class
@@ -309,8 +318,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 3: step 3, generate simulation strings
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppiRow3			= new JPanel();
-		JLabel				lGenString		= new JLabel("Setup simulation jobs");
-		this.bSetupSims						= new JButton("Setup Sims");
+		JLabel				lGenString		= new JLabel("Generate the simulation jobs");
+		this.bSetupSims						= new JButton("Run");
 		//------ set border and layout
 		ppiRow3.setLayout(new BoxLayout(ppiRow3, BoxLayout.X_AXIS));
 		ppiRow3.setBorder(BorderFactory.createCompoundBorder(
@@ -328,8 +337,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 4: step 4, submit simulations to queue
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppiRow4			= new JPanel();
-		JLabel				lSubmitSim		= new JLabel("Submit simulation jobss");
-		this.bSubmitSims					= new JButton("Submit Sims");
+		JLabel				lSubmitSim		= new JLabel("Submit simulation jobs");
+		this.bSubmitSims					= new JButton("Submit");
 		//------ set border and layout
 		ppiRow4.setLayout(new BoxLayout(ppiRow4, BoxLayout.X_AXIS));
 		ppiRow4.setBorder(BorderFactory.createCompoundBorder(
@@ -379,22 +388,22 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.statusData						= new String[6][2];
 		//------ 0
 		this.statusData[0][0]				= new String(ClusterApp.LABEL_LOAD_PRJ);	
-		this.statusData[0][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 1
 		this.statusData[1][0]				= new String(ClusterApp.LABEL_LOAD_EF);
-		this.statusData[1][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[1][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 2
 		this.statusData[2][0]				= new String(ClusterApp.LABEL_RUN_MKSIM);	
-		this.statusData[2][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[2][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 3
 		this.statusData[3][0]				= new String(ClusterApp.LABEL_SETUP_SIM);	
-		this.statusData[3][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[3][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 4	
 		this.statusData[4][0]				= new String(ClusterApp.LABEL_SUBMIT_SIM);	
-		this.statusData[4][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[4][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 5
 		this.statusData[5][0]				= new String(ClusterApp.LABEL_CHECK_QUEUE);	
-		this.statusData[5][1]				= new String(ClusterApp.STAT_NOT_APPLIED);
+		this.statusData[5][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ initialize status table
 		boolean status						= this.initTable(ClusterApp.TABLE_PROPS, this.statusData);
 		//------ add status table
@@ -721,9 +730,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pmpRow3.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
 		this.txMKSIMParams					= new JTextArea("", 12, 60);
+		this.deMKSIMParams					= this.txMKSIMParams.getDocument();
 		JScrollPane		paramsScroll		= new JScrollPane(this.txMKSIMParams);
 		this.txMKSIMParams.setEditable(true);
 		this.txMKSIMParams.setLineWrap(true);
+		//------ add listeners
+		this.deMKSIMParams.addDocumentListener(this);
 		//------ add components
 		pmpRow3.add(paramsScroll);
 		//------ add panel
@@ -762,7 +774,16 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.txMKSIMHelp.setEditable(false);
 		this.txMKSIMHelp.setFont(new Font(helpFont.getFamily(), Font.PLAIN, 10));
 		//------ load the op_mksim command help
-		this.txMKSIMHelp.setText(this.opProject.getMKSIMHelp());
+		try {
+			this.txMKSIMHelp.setText(this.opProject.getMKSIMHelp());
+		} catch (OpnetHeavyException e) {
+			//show the error messages in the text area
+			this.txMKSIMHelp.setText("");
+			this.txMKSIMHelp.append("Unable to get the op_mksim command help (see the log file)");
+			this.txMKSIMHelp.setForeground(ClusterApp.TX_COLOR_STDERR);
+			//log the error
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", setMK_SIMPanel");
+		}
 		//------ add components
 		pmhRow1.add(helpScroll);	
 		//------ add panel
@@ -863,9 +884,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pslCode.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
 		this.txDTSIMParams					= new JTextArea("", 10, 60);
+		this.deDTSIMParams					= this.txDTSIMParams.getDocument();
 		JScrollPane		paramsScroll		= new JScrollPane(this.txDTSIMParams);
 		this.txDTSIMParams.setEditable(true);
 		this.txDTSIMParams.setLineWrap(true);
+		//------ add listeners
+		this.deDTSIMParams.addDocumentListener(this);
 		//------ add components
 		pslCode.add(paramsScroll);
 		//------ add panel
@@ -1049,7 +1073,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	private void actionTrigger(int pPhase, boolean pState){
 		
-		/* -----------------------------------------------------------------------------------------------
+		/*
+		 * -----------------------------------------------------------------------------------------------
 		 * System behavior resume
 		 * -----------------------------------------------------------------------------------------------
 		 * 
@@ -1094,36 +1119,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_1_LOAD_PRJ:				
 				if (pState == true){
 					//enable gui components
-					//--- phase 2: load ef files
-											
+					
 					//set corresponding variables
-					//--- nothing to do					
+					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, ClusterApp.STAT_DONE);									
+					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_DONE);									
 					//trigger steps
 					this.startPhase2();					
 				} else {
 					//disable gui components
-					//--- phase 2: load ef files
-					
-					//--- phase 3: run op_mksim
-					
-					//--- phase 4: setup simulation
-					
-					//--- phase 5: submit simulations
-					
-					//--- phase 6: check queue
 					
 					//reset corresponding variables
-					//--- phase 2: load ef files
 					
-					//file output title???
-					//--- phase 3: run op_mksim
-					//--- phase 4: setup simulation
-					//--- phase 5: submit simulations
-					//--- phase 6: check queue					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, ClusterApp.STAT_FAIL);		
+					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_FAIL);		
 					//show error messages
 					//--- nothing to do					
 				}			
@@ -1135,42 +1144,21 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_2_LOAD_EF:
 				if (pState == true){
 					//enable gui components
-					//--- phase 2: load ef files
-					
-					//--- phase 3: run op_mksim
-					
+				
 					//set corresponding variables
-					//--- nothing to do
+					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, ClusterApp.STAT_DONE);
-					//apply actions
+					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_DONE);
 														
 					//trigger steps
 					//--- nothing to do
 				} else {
 					//disable gui components
-					//--- phase 2: load ef files
-					
-					//--- phase 3: run op_mksim
-					
-					//--- phase 4: setup simulation
-					
-					//--- phase 5: submit simulations
-					
-					//--- phase 6: check queue
-					// ???
 					
 					//reset corresponding variables
-					//--- phase 2: load ef files
-					
-					//--- phase 3: run op_mksim
-					//--- phase 4: setup simulation
-					//--- phase 5: submit simulations
-					//--- phase 6: check queue
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, ClusterApp.STAT_FAIL);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_FAIL);
 					//show error messages
 					JOptionPane.showMessageDialog(
 							this.mainPanel,
@@ -1186,35 +1174,31 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_3_RUN_MKSIM:
 				if (pState == true){
 					//enable gui components
-					//--- phase 4: setup simulation
-					
 										
 					//set corresponding variables
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, ClusterApp.STAT_DONE);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_DONE);
 					//trigger steps
-					
+					//--- nothing to do
+					//apply actions 
+					//--- update the list of generated sim files
+					this.updateSimsListContent();
+					//--- load the sim file help
+					this.getSimsFileHelp();
 				} else {
 					//disable gui components
-					//--- phase 4: setup simulation
-										
-					//--- phase 5: submit simulations
-					
-					//--- phase 6: check queue
-					
 					
 					//reset corresponding variables
-					//--- phase 4: setup simulation
-					//--- phase 5: submit simulations
-					//--- phase 6: check queue
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, ClusterApp.STAT_FAIL);
+					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_FAIL);
 					
+					//apply actions
+					//--- update the list of generated sim siles
+					this.updateSimsListContent();
 					//show error messages
-					
+										
 				}
 				//exit
 				break;			
@@ -1224,29 +1208,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_4_SETUP_SIM:
 				if (pState == true){
 					//enable gui components
-					//--- phase 5: submit simulations
 										
 					//set corresponding variables
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_SETUP_SIM, ClusterApp.STAT_DONE);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_SETUP_SIM, IAppUtils.STAT_DONE);
 					//trigger steps
 					
 				} else {
 					//disable gui components
-					//--- phase 5: submit simulations
-					
-					//--- phase 6: check queue
-					
 					
 					//reset corresponding variables
-					//--- phase 5: submit simulations
-					//--- phase 6: check queue
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_SETUP_SIM, ClusterApp.STAT_FAIL);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_SETUP_SIM, IAppUtils.STAT_FAIL);
 					//show error messages
 					
 				}
@@ -1258,25 +1233,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_5_SUBMIT_SIM:
 				if (pState == true){
 					//enable gui components
-					//--- phase 6: check queue
 										
 					//set corresponding variables
-					//--- phase 6: check queue
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, ClusterApp.STAT_DONE);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, IAppUtils.STAT_DONE);
 					//trigger steps
 					
 				} else {
 					//disable gui components
-					//--- phase 6: check queue
-										
+					
 					//reset corresponding variables
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, ClusterApp.STAT_FAIL);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, IAppUtils.STAT_FAIL);
 					//show error messages
 					
 				}
@@ -1292,8 +1262,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//set corresponding variables
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_CHECK_QUEUE, ClusterApp.STAT_DONE);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_CHECK_QUEUE, IAppUtils.STAT_DONE);
 					//trigger steps
 					
 				} else {
@@ -1302,8 +1271,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//reset corresponding variables
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_CHECK_QUEUE, ClusterApp.STAT_FAIL);
-					
+					this.statusDataSetValue(ClusterApp.LABEL_CHECK_QUEUE, IAppUtils.STAT_FAIL);
 					//show error messages
 					
 				}				
@@ -1349,7 +1317,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//set the not applied status
 		for (int i = pPhase + 1; i < this.statusData.length; i++){
-			this.statusData[i][1]		= ClusterApp.STAT_NOT_APPLIED;
+			this.statusData[i][1]		= IAppUtils.STAT_NOT_APPLIED;
 		}			
 		
 	} // End void setNotAppliedStatus
@@ -1468,7 +1436,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			try {
 				this.opProject.loadProject(projectPath, projectName);
 				
-			} catch (OpnetStrongException e) {
+			} catch (OpnetLightException e) {
+				//this warning should be shown in the text area
+				this.printAppOutputText(" WARNING:  " + e.getMessage(), ClusterApp.TX_STDERR, true);
+				//log the warning
+				this.sysUtils.printlnWar(e.getMessage(), this.className + ", startPhase1 (loadProject)");
+
+			} catch (OpnetHeavyException e) {
 				this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase1 (loadProject)");
 				opStatus				= false;
 			}			
@@ -1477,7 +1451,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//handle the possible error
 			this.sysUtils.printlnErr("JFileChooser dialog dismissed", this.className + ", startPhase1 (JFileChooser.ERROR_OPTION)");
 			opStatus					= false;
-		} 
+		} else if (returnVal == JFileChooser.CANCEL_OPTION){
+			//update the status flag
+			opStatus					= false;
+		}
 		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_1_LOAD_PRJ, opStatus);
@@ -1498,6 +1475,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//load the file list
 		try {
 			
+			//set the running status
+			this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_RUNNING);
+			this.statusModel.fireTableDataChanged();
+			
 			this.opProject.setNetworksMap();
 			
 			//load the data in the files table
@@ -1508,16 +1489,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//update the ef selected label
 			this.updateFilesSelectedInfo();
 			
-			//print project info
+			//print project info 
 			this.printProjectInfo();
 			
-		} catch (OpnetLightException e) {
-			this.sysUtils.printlnWar(e.getMessage(), this.className + ", startPhase2 (setNetworksMap)");
-		} catch (OpnetStrongException e) {
+		} catch (OpnetHeavyException e) {
+			//log the error
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase2 (setNetworksMap)");
 			opStatus					= false;
 		} 
-		
+				
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_2_LOAD_EF, opStatus);		
 		
@@ -1530,31 +1510,55 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	private void startPhase3(){
 		
+		/*
+		 * Right now this method assumes that all the sim files were correctly generated. 
+		 * If there is an error running the op_mksim command the runMKSIMCmd() method in the
+		 * OpnetProject class throws an OpnetHeavyException thus aborting the operation. 
+		 * 
+		 * This could be changed in a future version modifying the runMKSIMCmd() method in
+		 * the OpnetProject class, and the startPhase3() method in this class (ClusterApp).
+		 * 
+		 * NOTE: The updateSimsListContent() method in this class (ClusterApp) show be
+		 * revisited in that case.
+		 * 
+		 */
+		
 		//local attributes
-		boolean 	opStatus	= false;
-		String		output		= "";
+		boolean 			opStatus	= false;
+		Iterator<String>	outIt		= null;
+		Vector<String>		outVec		= null;
+		String				output		= null;
 		
 		//run the op_mksim command for the selected net names
 		try {
-			output				= this.opProject.runMKSIMCmd();
+			
+			//set the running status
+			this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_RUNNING);
+			this.statusModel.fireTableDataChanged();			
+			
+			//run the command 
+			outVec						= this.opProject.runMKSIMCmd();
 			
 			//load the output into the corresponding text area
-			this.txAppOutput.setText("");
-			this.txAppOutput.append(output);
+			//--- get the stdout and stderr data
+			outIt						= outVec.iterator();
+			while(outIt.hasNext()){
+				output					= outIt.next();
+				this.printAppOutputText(output, ClusterApp.TX_STDOUT, true);
+			}			
 			
 			//set the status flag
-			opStatus			= true;
+			opStatus					= true;
 			
-		} catch (OpnetStrongException e) {
+		} catch (OpnetHeavyException e) {
 			//show the error message
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase3");
 			//set the status flag
-			opStatus			= false;
-			
-			this.txAppOutput.setText("");
-			this.txAppOutput.append(output);
-			
+			opStatus					= false;	
 		}
+		
+		//clean the application output text area
+		this.printAppOutputText(null, ClusterApp.TX_STDOUT, true);
 		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_3_RUN_MKSIM, opStatus);
@@ -1564,7 +1568,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * Start the third phase of the system  in order to generate simulation string (setup simulation)
+	 * Start the fourth phase of the system in order to generate simulation string (setup simulation)
 	 */
 	private void startPhase4(){
 		
@@ -1581,7 +1585,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * Start the third phase of the system  in order to submit simulations to queue
+	 * Start the fifth phase of the system in order to submit simulations to queue
 	 */
 	private void startPhase5(){
 		
@@ -1651,8 +1655,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				//load the network list
 				while (it.hasNext()){
 					this.cbNetsList.addItem(it.next());				
-				}
-				
+				}				
 				//enable the list
 				this.cbNetsList.setEnabled(true);
 			} else {
@@ -1660,7 +1663,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				this.cbNetsList.addItem(this.netsListEmpty);
 			}
 			
-		} catch (OpnetStrongException e){
+		} catch (OpnetHeavyException e){
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateNetsListContent");
 			return;
 		}
@@ -1668,33 +1671,123 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 	} // End void updateNetsListContent
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** Update the list of sim files generated */
+	private void updateSimsListContent(){
 		
+		/*
+		 * Right now this method assumes that all the sim files were correctly generated.
+		 * This could be changed in a future version modifying the runMKSIMCmd() method in
+		 * the OpnetProject class, and the startPhase3() method in this class (ClusterApp).
+		 * 
+		 */
+		
+		//local attributes
+		Set<String>			compiledNames	= null;
+		Iterator<String>	it				= null;
+		
+		//clear the sims names list
+		this.cbSimsList.removeAllItems();
+		this.cbSimsList.setEnabled(false);
+		
+		//get the compiled files list
+		try {
+			//get the names
+			compiledNames					= this.opProject.getCompiledSimFilesNames();
+			
+			
+			if (compiledNames != null && compiledNames.size() > 0){
+				//load the header
+				this.cbSimsList.addItem(this.simsListHeader);
+				//get the iterator
+				it							= compiledNames.iterator();
+				//load the list
+				while (it.hasNext()){
+					this.cbSimsList.addItem(it.next());
+				}				
+				//enable the list
+				this.cbSimsList.setEnabled(true);
+				
+			} else {
+				//nothing to load 
+				this.cbSimsList.addItem(this.sismListEmpty);
+			}
+			
+		} catch (OpnetHeavyException e) {
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateSimsListContent");
+			return;
+		}
+		
+		
+	} // End void updateSimsListContent
+	
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* 4th-LEVEL METHODS: OUTPUT FUNCTIONALITIES																	*/
 	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Print the pText in the application output text area
+	 * 
+	 * @param		pText		the text to print
+	 * @param		pOutType	the printing mode
+	 * @param		pClear		the clear output flag 
+	 */
+	private void printAppOutputText(String pText, int pOutType, boolean pClear){
 		
+		//clear the output if necessary
+		if (pClear){
+			this.txAppOutput.setText("");
+		}
+		
+		//set the fg color according to the printing mode
+		switch (pOutType){
+		case ClusterApp.TX_STDOUT:
+			this.txAppOutput.setForeground(ClusterApp.TX_COLOR_STDOUT);
+			break;
+		case ClusterApp.TX_STDERR:
+			this.txAppOutput.setForeground(ClusterApp.TX_COLOR_STDERR);
+			break;
+		default:
+			this.txAppOutput.setForeground(ClusterApp.TX_COLOR_STDOUT);
+			this.sysUtils.printlnErr("Unknown printing mode", this.className + ", printAppOutputText");
+		}
+		
+		//print the text
+		if (pText != null){
+			this.txAppOutput.append(pText);		
+		}
+		
+	} // End void printAppOutputText
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
 	/** 
 	 * Load the project info in the corresponding text area
 	 */
 	private void printProjectInfo(){
 		
-		//clean the console
-		this.txAppOutput.setText("");
+		//local attributes
+		StringBuffer		text	= new StringBuffer("");
 		
 		//add text
-		this.txAppOutput.append("------------------------------------------------------------" 	+ this.lineBreak);
-		this.txAppOutput.append(" Project name " 												+ this.lineBreak);
-		this.txAppOutput.append("------------------------------------------------------------" 	+ this.lineBreak);
-		this.txAppOutput.append(this.opProject.getProjectName()									+ this.lineBreak);
-		this.txAppOutput.append(this.lineBreak);
-		this.txAppOutput.append("------------------------------------------------------------" 	+ this.lineBreak);
-		this.txAppOutput.append(" Networks found "												+ this.lineBreak);
-		this.txAppOutput.append("------------------------------------------------------------" 	+ this.lineBreak);
-		this.txAppOutput.append(this.opProject.getOutputNetworkNames());		
+		text.append("------------------------------------------------------------" 	+ this.lineBreak);
+		text.append(" Project name " 												+ this.lineBreak);
+		text.append("------------------------------------------------------------" 	+ this.lineBreak);
+		text.append(this.opProject.getProjectName()									+ this.lineBreak);
+		text.append(this.lineBreak);
+		text.append("------------------------------------------------------------" 	+ this.lineBreak);
+		text.append(" Networks found "												+ this.lineBreak);
+		text.append("------------------------------------------------------------" 	+ this.lineBreak);
+		text.append(this.opProject.getOutputNetworkNames());		
+		
+		//print the text
+		this.printAppOutputText(text.toString(), ClusterApp.TX_STDOUT, true);
 		
 	} // End void printProjectInfo
 	
-/* ------------------------------------------------------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
 	 * Initialize the ef files info label 
@@ -1733,7 +1826,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//try to load the files data
 		try{
 			filesData						= this.opProject.getFilesData();
-		} catch (OpnetStrongException e) {
+		} catch (OpnetHeavyException e) {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", updateFilesSelectedInfo");
 			return;
 		}			
@@ -1759,6 +1852,29 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 	} // End void updateFilesSelectedInfo
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/**
+	 * Get the help for the sims files
+	 */
+	private void getSimsFileHelp(){
+				
+		//get the sim file help
+		try{
+		
+			//load the help in the text area
+			this.txDTSIMHelp.setText(this.opProject.getSimsFileHelp());
+		
+		} catch (OpnetHeavyException e){
+			//show the error messages in the text area
+			this.txDTSIMHelp.setText("");
+			this.txDTSIMHelp.append("Unable to get the sim file help (see the log file)");
+			this.txDTSIMHelp.setForeground(ClusterApp.TX_COLOR_STDERR);
+			//log the error
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getSimsFileHelp");
+		}
+		
+	} // End void getSimsFileHelp 
 	
 	/*
 	================================================================================================================== 
@@ -1785,7 +1901,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			if (title == ClusterApp.TAB_3_MKSIM){
 				this.updateNetsListContent();
 			}
-			
+						
 		}		
 		
 	} // End void stateChanged
@@ -1814,12 +1930,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//phase 3: run command op_mksim 
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bRunMKSIM){ 
-			//show the time info message
-			JOptionPane.showMessageDialog(
-					this.mainPanel,
-					"Please wait..." + this.lineBreak + "This operation may take a few minuts",
-					"Running command",
-					JOptionPane.INFORMATION_MESSAGE);
+			//show the time info message in the text area
+			this.printAppOutputText("This operation may take a few minutes to complete." + this.lineBreak + "Please wait...", ClusterApp.TX_STDOUT, true);
 			//start the phase 3
 			this.startPhase3(); 
 		}
@@ -1841,8 +1953,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		// clear console button
 		//-----------------------------------------------------------------------------------------------
-		if (e.getSource() == this.bAppOutputClear){ 
-			this.txAppOutput.setText("");
+		if (e.getSource() == this.bAppOutputClear){
+			this.printAppOutputText(null, ClusterApp.TX_STDOUT, true);
 		}
 		
 		//-----------------------------------------------------------------------------------------------
@@ -1854,7 +1966,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			Object[][]		localData		= null;
 			try {
 				localData					= this.opProject.getFilesData();
-			} catch (OpnetStrongException ex) {
+			} catch (OpnetHeavyException ex) {
 				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - get)");
 				return;
 			}
@@ -1870,7 +1982,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//set the data
 			try {
 				this.opProject.setFilesData(localData);
-			} catch (OpnetStrongException ex) {
+			} catch (OpnetHeavyException ex) {
 				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - set)");
 				return;
 			}
@@ -1892,7 +2004,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	
 			try {
 				localData					= this.opProject.getFilesData();
-			} catch (OpnetStrongException ex) {
+			} catch (OpnetHeavyException ex) {
 				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - get)");
 				return;
 			}
@@ -1908,7 +2020,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//set the data
 			try {
 				this.opProject.setFilesData(localData);
-			} catch (OpnetStrongException ex) {
+			} catch (OpnetHeavyException ex) {
 				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (select all checkbox - set)");
 				return;
 			}
@@ -1945,7 +2057,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						this.txMKSIMParams.append(this.lineBreak);
 					}
 					
-				} catch (OpnetStrongException ex){
+				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist select");
 					return;					
 				}
@@ -1957,6 +2069,165 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 		}
 		
+		//-----------------------------------------------------------------------------------------------
+		// netlist save button
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbNetsList.isEnabled()) && (e.getSource() == this.bNetsSave)){
+			String			netName				= (String) this.cbNetsList.getSelectedItem();
+			Vector<String>	params				= null;
+			String			code				= "";
+			
+			//avoid the selection of the header
+			if ((netName != null) && (netName != this.netsListHeader)){
+				//get the code
+				code							= this.txMKSIMParams.getText();
+				//set the new code
+/*
+				try{
+					if (code != null){
+						//TODO
+						//this.opProject.setNetworkMKSIMCode(netName, code);
+					}
+				} catch (OpnetHeavyException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist save button");
+					return;					
+				}	
+*/
+			}
+			
+		}
+		
+		//TODO
+		
+		//-----------------------------------------------------------------------------------------------
+		// netlist discard button
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbNetsList.isEnabled()) && (e.getSource() == this.bNetsReset)){
+			
+			String			netName				= (String) this.cbNetsList.getSelectedItem();
+			Vector<String>	params				= null;
+			
+			//avoid the selection of the header
+			if ((netName != null) && (netName != this.netsListHeader)){
+				//get the op_mksim command params
+				try{
+					//get the param
+					params						= this.opProject.getNetworkMKSIMCode(netName);
+					//clean the params area
+					this.txMKSIMParams.setText("");
+					//load the params
+					for (int i = 0; i < params.size(); i++){
+						this.txMKSIMParams.append(params.elementAt(i));
+						this.txMKSIMParams.append(this.lineBreak);
+					}	
+
+					//disable the save button
+					this.bNetsSave.setEnabled(false);
+					
+				} catch (OpnetHeavyException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist discard button");
+					return;					
+				}				
+			} 
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// simslist combo box select
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbSimsList.isEnabled()) && (e.getSource() == this.cbSimsList)){
+			
+			JComboBox		combo				= (JComboBox) e.getSource();
+			String			netName				= (String) combo.getSelectedItem();
+			Vector<String>	params				= null;
+			
+			//avoid the selection of the header
+			if ((netName != null) && (netName != this.simsListHeader)){
+
+				//get the op_mksim command params
+				try{
+					//get the param
+					params						= this.opProject.getSimFileCode(netName);
+					//clean the params area
+					this.txDTSIMParams.setText("");
+					//load the params
+					for (int i = 0; i < params.size(); i++){
+						this.txDTSIMParams.append(params.elementAt(i));
+						this.txDTSIMParams.append(this.lineBreak);
+					}
+					
+				} catch (OpnetHeavyException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simlist select");
+					return;					
+				}
+				
+			} else {
+				//clear the output
+				this.txDTSIMParams.setText("");
+			}
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// simslist save button
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbSimsList.isEnabled()) && (e.getSource() == this.bSimsSave)){
+			String			simFileName			= (String) this.cbSimsList.getSelectedItem();
+			Vector<String>	params				= null;
+			String			code				= "";
+			
+			//avoid the selection of the header
+			if ((simFileName != null) && (simFileName != this.simsListHeader)){
+				//get the code
+				code							= this.txDTSIMParams.getText();
+				//set the new code
+/*
+				try{
+					if (code != null){
+						//TODO
+						//this.opProject.setSimFileCode(simFileName, code);
+					}
+				} catch (OpnetHeavyException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simlist save button");
+					return;					
+				}	
+*/	
+			}
+			
+		}
+		
+		//TODO
+		
+		//-----------------------------------------------------------------------------------------------
+		// simslist discard button
+		//-----------------------------------------------------------------------------------------------
+		if ((this.cbSimsList.isEnabled()) && (e.getSource() == this.bSimsReset)){
+			
+			String			netName				= (String) this.cbSimsList.getSelectedItem();
+			Vector<String>	params				= null;
+			
+			//avoid the selection of the header
+			if ((netName != null) && (netName != this.simsListHeader)){
+				//get the sim file params
+				try{
+					//get the param
+					params						= this.opProject.getSimFileCode(netName);
+					//clean the params area
+					this.txDTSIMParams.setText("");
+					//load the params
+					for (int i = 0; i < params.size(); i++){
+						this.txDTSIMParams.append(params.elementAt(i));
+						this.txDTSIMParams.append(this.lineBreak);
+					}	
+
+					//disable the save button
+					this.bSimsSave.setEnabled(false);
+					
+				} catch (OpnetHeavyException ex){
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simslist discard button");
+					return;					
+				}				
+			} 
+		}
 		
 	} // End actionPerformed
 	
@@ -1994,7 +2265,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//update the corresponding table data	
 					try{
 						this.opProject.setIncluded(fileName, isIncluded);
-					} catch (OpnetStrongException ex) {
+					} catch (OpnetHeavyException ex) {
 						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - setIncluded)");
 						return;
 					}
@@ -2003,7 +2274,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						this.filesModel.resetModel(null, this.opProject.getFilesData());
 						this.filesModel.fireTableDataChanged();
 						
-					} catch (OpnetStrongException ex) {
+					} catch (OpnetHeavyException ex) {
 						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - get data)");
 						return;
 					}
@@ -2054,7 +2325,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						//--- output
 						this.txFileContent.append(content);
 						
-					} catch (OpnetStrongException ex){
+					} catch (OpnetHeavyException ex){
 						//show error message
 						JOptionPane.showMessageDialog(
 								this.mainPanel,
@@ -2139,7 +2410,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//update the corresponding table data	
 					try{
 						this.opProject.setIncluded(fileName, isIncluded);
-					} catch (OpnetStrongException ex) {
+					} catch (OpnetHeavyException ex) {
 						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - setIncluded)");
 						return;
 					}
@@ -2148,7 +2419,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						this.filesModel.resetModel(null, this.opProject.getFilesData());
 						this.filesModel.fireTableDataChanged();
 						
-					} catch (OpnetStrongException ex) {
+					} catch (OpnetHeavyException ex) {
 						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", mouseClicked (single-click - get data)");
 						return;
 					}
@@ -2199,7 +2470,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						//--- output
 						this.txFileContent.append(content);
 						
-					} catch (OpnetStrongException ex){
+					} catch (OpnetHeavyException ex){
 						//show error message
 						JOptionPane.showMessageDialog(
 								this.mainPanel,
@@ -2234,6 +2505,69 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	@Override
 	public void keyTyped(KeyEvent e) { /* nothing to do */ }
 	
+	/*
+	================================================================================================================== 
+	Document Listener																										
+	==================================================================================================================	
+	*/
+	@Override
+	public void insertUpdate(DocumentEvent e) {
+		
+		//-------------------------------------------------------------------------------------------
+		// object: op_mksim params text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deMKSIMParams){
+			//enable the save button
+			this.bNetsSave.setEnabled(true);
+			//enable the discard button
+			this.bNetsReset.setEnabled(true);
+		}
+		
+		//-------------------------------------------------------------------------------------------
+		// object: sim files params text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deDTSIMParams){
+			//enable the save button
+			this.bSimsSave.setEnabled(true);
+			//enable the discard button
+			this.bSimsReset.setEnabled(true);
+		}
+		
+	} // End void insertUpdate
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	@Override
+	public void removeUpdate(DocumentEvent e) {
+
+		//-------------------------------------------------------------------------------------------
+		// object: op_mksim params text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deMKSIMParams){
+			//enable the save button
+			this.bNetsSave.setEnabled(true);
+			//enable the discard button
+			this.bNetsReset.setEnabled(true);
+		}
+
+		//-------------------------------------------------------------------------------------------
+		// object: sim files params text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deDTSIMParams){
+			//enable the save button
+			this.bSimsSave.setEnabled(true);
+			//enable the discard button
+			this.bSimsReset.setEnabled(true);
+		}
+
+		
+	} // End void removeUpdate
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	@Override
+	public void changedUpdate(DocumentEvent e) { /* nothing to do */ }
+
 	
 	/*
 	================================================================================================================== 

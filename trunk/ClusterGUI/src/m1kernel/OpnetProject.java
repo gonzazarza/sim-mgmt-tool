@@ -7,7 +7,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 //exceptions
-import m1kernel.exceptions.OpnetStrongException;
+import m1kernel.exceptions.OpnetExceptionClass;
+import m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.exceptions.OpnetLightException;
 //interfaces
 import m1kernel.interfaces.IAppUtils;
 import m1kernel.interfaces.IOpnetProject;
@@ -17,7 +19,7 @@ import m1kernel.interfaces.ISysUtils;
  * Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1102
+ * @version		2010.1119
  */
 public class OpnetProject implements IOpnetProject {
 
@@ -35,10 +37,12 @@ public class OpnetProject implements IOpnetProject {
 	private String										projectPath			= "";				//project path	
 	private HashMap<String,HashMap<String,OpnetJob>>	networksMap			= null;				//project networks map
 	private int											efFilesNum			= 0;				//number of ef files
+	private ConsoleJob									simFileHelp			= null;				//sim files help
 	//logic control attributes
 	private boolean										isProjecLoaded		= false;			//project load flag
 	private boolean										isNetworksMapSet	= false;			//networks map load flag
 	private boolean										isRunMKSIMDone		= false;			//op_mksim run flag
+	private boolean										isSimHelpLoaded		= false;			//sim file help load flag
 	private boolean										isSimSetupDone		= false;			//sims setup flag
 	private boolean										isSimSubmitDone		= false;			//sims submit flag
 	private boolean										isQueueRunning		= false;			//queue checks run flag
@@ -51,6 +55,7 @@ public class OpnetProject implements IOpnetProject {
 	*/
 	/**
 	 * Class constructor 
+	 * @param 		pSysUtils				the system utilities class 
 	 */
 	public OpnetProject(ISysUtils pSysUtils){
 		
@@ -86,10 +91,12 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Load the project file
 	 * 
-	 *  @param		pPath				project path
-	 *  @param 		pName				project name  
+	 *  @param		pPath					project path
+	 *  @param 		pName					project name  
+	 * 	@throws 	OpnetHeavyException		if one of the parameters is null
+	 *  @throws		OpnetLightException		if there are old sim files in the project directory
 	 */
-	public void loadProject(String pPath, String pName) throws OpnetStrongException {
+	public void loadProject(String pPath, String pName) throws OpnetHeavyException, OpnetLightException {
 	
 		//initialize the load project flag
 		this.isProjecLoaded			= false;
@@ -99,7 +106,7 @@ public class OpnetProject implements IOpnetProject {
 			this.projectPath		= pPath;
 		} else {
 			//exception
-			throw new OpnetStrongException("Project path not valid");
+			throw new OpnetHeavyException("Project path not valid");
 		}
 		
 		//get the project path
@@ -107,11 +114,16 @@ public class OpnetProject implements IOpnetProject {
 			this.projectName		= pName;
 		} else {			
 			//exception
-			throw new OpnetStrongException("Project name not valid");
+			throw new OpnetHeavyException("Project name not valid");
 		}
 		
 		//update the load project flag
 		this.isProjecLoaded			= true;
+		
+		//check if there are old sim files
+		if (this.oldSimFilesFound()){
+			throw new OpnetLightException("Old sim files found in the project path (this may lead to errors)", OpnetExceptionClass.MSG_TYPE_WARNING);
+		}		
 		
 	} // End boolean loadProject
 	
@@ -119,12 +131,15 @@ public class OpnetProject implements IOpnetProject {
 	
 	/**
 	 * Load the supplementary environmental files and set the networks map
+	 * 
+	 * @throws 		OpnetHeavyException		if the previous operation is not applied 
+	 * 										or if it is not possible to load the ef files list 
 	 */
-	public void setNetworksMap() throws OpnetStrongException {
+	public void setNetworksMap() throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isProjecLoaded) {
-			throw new OpnetStrongException("Unable to set the networks map: project not loaded");
+			throw new OpnetHeavyException("Unable to set the networks map: project not loaded");
 		}
 		
 		//initialize the networks map set flag
@@ -156,14 +171,14 @@ public class OpnetProject implements IOpnetProject {
 			
 			//check the operation status
 			if (!completed){
-				throw new OpnetStrongException("Unable to load the supplementary environmental files lists");
+				throw new OpnetHeavyException("Unable to load the supplementary environmental files lists");
 			}			
 			
 		} else {
 			//exception
-			throw new OpnetStrongException("Unable to load the file list");
+			throw new OpnetHeavyException("Unable to load the file list");
 		}
-				
+		
 		//update the networks map set flag
 		this.isNetworksMapSet		= true;
 		
@@ -174,13 +189,15 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Run the op_mksim command
 	 * 
-	 * @return				the output stream in a string 
+	 * @return								the command output streams as a vector of strings
+	 * @throws 		OpnetHeavyException		if the previous operation is not applied
+	 * 										or if it is not possible to run the op_mksim command
 	 */
-	public String runMKSIMCmd() throws OpnetStrongException {
+	public Vector<String> runMKSIMCmd() throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to run the network op_mksim code: networks map not set");
+			throw new OpnetHeavyException("Unable to run the network op_mksim code: networks map not set");
 		}
 		
 		//initialize run op_mksim done flag
@@ -193,8 +210,9 @@ public class OpnetProject implements IOpnetProject {
 		Vector<String>		mkSimCode	= null;
 		Iterator<String>	itVec		= null;
 		StringBuffer		lineCode	= null;
-		StringBuffer		outBuffer	= new StringBuffer("");
-		String				output		= null;
+		ConsoleJob			item		= null;
+		Vector<String>		outVec		= new Vector<String>();
+		
 		
 		//get the list of selected networks names
 		try {			
@@ -225,46 +243,63 @@ public class OpnetProject implements IOpnetProject {
 							lineCode.append(this.lineBreak);							
 						}												
 					} else {
-						throw new OpnetStrongException("op_mksim codes vector == null");
+						throw new OpnetHeavyException("op_mksim codes vector == null");
 					}
 					
-					//run the op_mksim
-					output				= this.appUtils.runCommandMKSim(this.projectPath, lineCode.toString());
+					//run the op_mksim and load the console output
+					item 				= this.appUtils.runCommandMKSim(this.projectPath, lineCode.toString());
 					
-					//load the output
-					if (output != null){
-						outBuffer.append(output);
+					if (!item.stderrActive()){
+						//save the output
+						if (item.stdoutActive()){
+							outVec.add(item.getStdout());
+						} 
+						//load the sim file name
+						this.loadSimFileName(netName);
+						//set the compiled flag
+						this.setNetMKSIMCompiledFlag(netName, true);
+						//load the sim file help
+						this.loadSimHelp(netName);
 					} else {
-						throw new OpnetStrongException("There were errors running the op_mksim command");
+						//set the compiled flag
+						this.setNetMKSIMCompiledFlag(netName, false);
+						//throw an exception
+						throw new OpnetHeavyException("Unable to run the op_mksim command (see the log file)");
 					}
-				}				
+					
+				}
 				
 			} else {
-				throw new OpnetStrongException("Selected networks names set == null");
+				throw new OpnetHeavyException("Selected networks names set == null");
 			}
 			
-		} catch (OpnetStrongException e) {
-			throw new OpnetStrongException(e.getMessage());
+		} catch (OpnetHeavyException e) {
+			throw new OpnetHeavyException(e.getMessage());
 		}		
 		
 		//update run op_mksim done flag
 		this.isRunMKSIMDone				= true;
 		
 		//return the output
-		return (outBuffer.toString());
+		return (outVec);
 		
-	} // End String runMKSIMCmd
+	} // End Vector<String> runMKSIMCmd
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-	 * @return the complete list of supplementary environmental files and their included status  
+	 * Return the complete list of supplementary environmental files and their included status
+	 * 
+	 * 	@return 							the complete list of files and their included status  
+	 * 	@throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 										if the environmental files list was not loaded.
+	 * 										if there are errors in the files table data array bounds.
 	 */
-	public Object[][] getFilesData() throws OpnetStrongException {
+	public Object[][] getFilesData() throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to get the files data: networks map not set");
+			throw new OpnetHeavyException("Unable to get the files data: networks map not set");
 		}
 		
 		//local attributes
@@ -280,7 +315,7 @@ public class OpnetProject implements IOpnetProject {
 		
 		//avoid the empty files situation
 		if (this.efFilesNum == 0){
-			throw new OpnetStrongException("Supplementary environmental files list not loaded");
+			throw new OpnetHeavyException("Supplementary environmental files list not loaded");
 		}
 		
 		//set the table data size
@@ -299,7 +334,7 @@ public class OpnetProject implements IOpnetProject {
 			while (itInner.hasNext()){
 				//check the array bounds
 				if (localSize == tableSize){
-					throw new OpnetStrongException("Wrong files table data array bounds");
+					throw new OpnetHeavyException("Wrong files table data array bounds");
 				}				
 				//get the file name
 				fileName						= itInner.next();
@@ -322,18 +357,23 @@ public class OpnetProject implements IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * @param the data for the list of supplementary environmental files and their included status to set 
+	 * Set the data for the list of supplementary environmental files and their included status
+	 * 
+	 * @param 	pData						the data for the list of supplementary environmental files and their included status to set 
+	 * @throws 	OpnetHeavyException			if the previous operation was not applied.
+	 * 										if the pData parameter is null.
+	 * 										if it was not possible to set the data.
 	 */
-	public void setFilesData(Object[][] pData) throws OpnetStrongException {
+	public void setFilesData(Object[][] pData) throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to set the files data: networks map not set");
+			throw new OpnetHeavyException("Unable to set the files data: networks map not set");
 		}
 		
 		//avoid the null pointer exception
 		if (pData == null){
-			throw new OpnetStrongException("The supplementary environmental files data to set cannot be null");
+			throw new OpnetHeavyException("The supplementary environmental files data to set cannot be null");
 		}
 		
 		//local attributes
@@ -359,11 +399,11 @@ public class OpnetProject implements IOpnetProject {
 					//set the included value
 					this.networksMap.get(netName).get(fileName).setEfFileIncluded(included);
 				} else {
-					throw new OpnetStrongException("File name " + fileName + " not found in the networks map");
+					throw new OpnetHeavyException("File name " + fileName + " not found in the networks map");
 				}								
 				
 			} else {
-				throw new OpnetStrongException("Network name " + netName + " not found in the networks map");
+				throw new OpnetHeavyException("Network name " + netName + " not found in the networks map");
 			}
 			
 		}	
@@ -376,15 +416,17 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Set the isIncluded status for the fileName
 	 * 
-	 * @param		pFileName			the item identifier
-	 * @param		pIsIncluded			the item status
+	 * @param		pFileName				the item identifier
+	 * @param		pIsIncluded				the item status
+	 * @throws 		OpnetHeavyException		if the previous operation was not applied.
+	 * 										if the operation fails for some reason.
 	 * 
 	 */	
-	public void setIncluded(String pFileName, boolean pIsIncluded) throws OpnetStrongException {
+	public void setIncluded(String pFileName, boolean pIsIncluded) throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to set the included status: networks map not set");
+			throw new OpnetHeavyException("Unable to set the included status: networks map not set");
 		}
 		
 		//local attributes
@@ -402,15 +444,15 @@ public class OpnetProject implements IOpnetProject {
 					
 				} else {
 					//file name not found
-					throw new OpnetStrongException("File name " + pFileName + " not found in the networks map");
+					throw new OpnetHeavyException("File name " + pFileName + " not found in the networks map");
 				}
 			} else {
 				//network name not found
-				throw new OpnetStrongException("Network name " + netName + " not found in the networks map");
+				throw new OpnetHeavyException("Network name " + netName + " not found in the networks map");
 			}
 						
 		} else {
-			throw new OpnetStrongException("Unable to get the net name: wrong file name " + pFileName);
+			throw new OpnetHeavyException("Unable to get the net name: wrong file name " + pFileName);
 		}		
 		
 	} // End setIncluded
@@ -421,7 +463,8 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Set and return the network names for the output text area
 	 * 
-	 * @return 			the set of network names prepared for the output text area  
+	 * @return 								the set of network names prepared for the output text area  
+	 * 
 	 */
 	public String getOutputNetworkNames(){
 				
@@ -444,7 +487,9 @@ public class OpnetProject implements IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-	 * @return the length of the files data  (a.k.a. the number of ef files) 
+	 * Return the number of supplementary environmental files
+	 * 
+	 * @return 								the length of the files data  (a.k.a. the number of ef files) 
 	 */
 	public int getFilesDataLength() {
 		
@@ -456,13 +501,16 @@ public class OpnetProject implements IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-	 * @return the set of network names
+	 * Return the list of network names
+	 * 
+	 * @return 								the set of network names
+	 * @throws		 OpnetHeavyException	if the previous operation was not applied.
 	 */
-	public Set<String> getNetworksNames() throws OpnetStrongException {
+	public Set<String> getNetworksNames() throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to set get the networks names: networks map not set");
+			throw new OpnetHeavyException("Unable to set get the networks names: networks map not set");
 		}
 		
 		//local attributes
@@ -476,13 +524,17 @@ public class OpnetProject implements IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */	
 
 	/**
-	 * @return the set of selected network names
+	 * Return the list of selected networks
+	 * 
+	 * @return								the set of selected network names
+	 * @throws 		OpnetHeavyException		if the previous operation was not applied.
+	 * 				
 	 */
-	public Set<String> getSelectedNetworksNames() throws OpnetStrongException {
+	public Set<String> getSelectedNetworksNames() throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to set get the networks names: networks map not set");
+			throw new OpnetHeavyException("Unable to get the selected networks names: networks map not set");
 		}
 		
 		//local attributes
@@ -527,20 +579,139 @@ public class OpnetProject implements IOpnetProject {
 		
 	} // End Set<String> getSelectedNetworksNames()
 
+	/* ------------------------------------------------------------------------------------------------------------ */	
+
+	/**
+	 * Return the names of the network names successfully compiled
+	 * 
+	 * @return 							the set of compiled network names
+	 * @throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 
+	 */
+	public Set<String> getCompiledNetworksNames() throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isRunMKSIMDone) {
+			throw new OpnetHeavyException("Unable to get the compiled networks names: op_mksim command not applied");
+		}
+		
+		//local attributes
+		Set<String>					compNetNames	= new HashSet<String>();
+		Iterator<String>			itOuter			= this.networksMap.keySet().iterator();
+		Iterator<String>			itInner			= null;
+		HashMap<String,OpnetJob>	itemOuter		= null;
+		String						netName			= "";
+		String						fileName		= "";
+		boolean						compiled		= false;
+		
+		//check the network compiled status
+		while (itOuter.hasNext()){
+			//reset the compiled flag
+			compiled								= false;
+			//get the net name
+			netName									= itOuter.next();
+			//get the net hash map
+			itemOuter								= this.networksMap.get(netName);
+			//get the inner iterator
+			itInner									= itemOuter.keySet().iterator();
+			//check the status of the entire file names for each list
+			while (itInner.hasNext()){
+				//get the file name
+				fileName							= itInner.next();
+				//check the compiled status
+				if (itemOuter.get(fileName).isEfFileMKSIMCompiled()){
+					compiled						= true;
+					break;
+				}
+			}
+			//add the net name if at least one file name is compiled
+			if (compiled){
+				compNetNames.add(netName);
+			}
+			
+		}
+		
+		//return the compiled net names
+		return(compNetNames);
+		
+	} // End Set<String> getCompiledNetworksNames
+
+	/* ------------------------------------------------------------------------------------------------------------ */	
+
+	/**
+	 * Return the names of the sim files successfully compiled
+	 * 
+	 * @return 							the set of compiled sim files
+	 * @throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 									if there is an error finding the sim file.
+	 */
+	public Set<String> getCompiledSimFilesNames() throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isRunMKSIMDone) {
+			throw new OpnetHeavyException("Unable to get the compiled sim files names: op_mksim command not applied");
+		}
+		
+		//local attributes
+		Set<String>					compSimNames	= new HashSet<String>();
+		Iterator<String>			itOuter			= this.networksMap.keySet().iterator();
+		Iterator<String>			itInner			= null;
+		HashMap<String,OpnetJob>	itemOuter		= null;
+		String						netName			= "";
+		String						fileName		= "";
+		OpnetJob					item			= null;
+		boolean						compiled		= false;
+		boolean						included		= false;
+		
+		//check the network compiled status
+		while (itOuter.hasNext()){
+			//get the net name
+			netName									= itOuter.next();
+			//get the net hash map
+			itemOuter								= this.networksMap.get(netName);
+			//get the inner iterator
+			itInner									= itemOuter.keySet().iterator();
+			//check the status of the entire file names for each list
+			while (itInner.hasNext()){
+				//get the file name
+				fileName							= itInner.next();
+				item								= this.networksMap.get(netName).get(fileName);
+				compiled							= item.isEfFileMKSIMCompiled();
+				included							= item.isEfFileIncluded();
+				//save the name
+				if (included && compiled){
+					//get the sim file name					
+					compSimNames.add(item.getSimFileName());					
+				} else {
+					//error
+					throw new OpnetHeavyException("Sim file " + fileName + " included == " + Boolean.toString(included) + ", compiled == " + Boolean.toString(compiled));
+				}
+				
+			}
+			
+		}
+		
+		//return the compiled sim files names
+		return(compSimNames);
+		
+	} // End Set<String> getCompiledSimFilesNames
 	
 	/* ------------------------------------------------------------------------------------------------------------ */	
 	
 	/**
 	 * Return the content of the specified file
 	 * 
-	 * @param	pFileName			the name of the file to load
+	 * @param		pFileName				the name of the file to load
+	 * @return								the file content
+	 * @throws 		OpnetHeavyException		if the previous operation was not applied.
+	 * 										if it was not possible to read the ef file content.
 	 * 
 	 */
-	public String getEfFileContent(String pFileName) throws OpnetStrongException {
+	public String getEfFileContent(String pFileName) throws OpnetHeavyException {
 	
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to load the ef file content: networks map not set");
+			throw new OpnetHeavyException("Unable to load the ef file content: networks map not set");
 		}	
 		
 		//local attributes
@@ -555,7 +726,7 @@ public class OpnetProject implements IOpnetProject {
 			fileContent				= this.appUtils.getEfContents().toString();			
 		} else {
 			//load error
-			throw new OpnetStrongException("Unable to load the ef file content: AppUtils class error");
+			throw new OpnetHeavyException("Unable to load the ef file content: AppUtils class error");
 		}		
 		
 		//exit
@@ -568,14 +739,16 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Return the code for the op_mksim command for the specified network
 	 * 
-	 *  @param			pNetName	the network name
-	 *  @return						the op_mksim code
+	 *  @param		pNetName				the network name
+	 *  @return								the op_mksim code
+	 * 	@throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 										if the network wasn't found.
 	 */
-	public Vector<String> getNetworkMKSIMCode(String pNetName) throws OpnetStrongException {
+	public Vector<String> getNetworkMKSIMCode(String pNetName) throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isNetworksMapSet) {
-			throw new OpnetStrongException("Unable to load the network op_mksim code: networks map not set");
+			throw new OpnetHeavyException("Unable to load the network op_mksim code: networks map not set");
 		}
 		
 		//local attributes
@@ -595,7 +768,7 @@ public class OpnetProject implements IOpnetProject {
 			
 		} else {
 			//network not found
-			throw new OpnetStrongException("Network name " + pNetName + " not found in the networks map");
+			throw new OpnetHeavyException("Network name " + pNetName + " not found in the networks map");
 		}		
 		
 		//return the op_mksim code
@@ -605,18 +778,195 @@ public class OpnetProject implements IOpnetProject {
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 
-	/** @return the op_mksim command help */
-	public String getMKSIMHelp(){
+	/** 
+	 * Return the help of the op_mksim command
+	 * 
+	 * 	@return 							the op_mksim command help
+ 	 * 	@throws 	OpnetHeavyException		if it was not possible to get the command help
+	 */
+	public String getMKSIMHelp() throws OpnetHeavyException {
 		
 		//local attributes
-		String			help	= this.appUtils.getMKSimHelp();
+		String			help	= "";
+		ConsoleJob		result	= this.appUtils.getMKSimHelp();
+		
+		//check errors
+		if (result.stderrActive()){
+			//unable to get the help
+			throw new OpnetHeavyException("Unable to get the op_mksim help");
+		}
+		
+		//get the op_mksim command help
+		if (result.stdoutActive()){
+			help				= result.getStdout();
+		}
 		
 		//return the help
 		return(help);
 		
 	} // End String getMKSimHelp
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
 	
+	/**
+	 * 	Return the sim code of every ef file included and compiled correctly for each network name
+	 * 
+	 * @param		pNetName				the network name
+	 * @return								the sim code
+	 * @throws		OpnetHeavyException		if the previous action was not applied.
+	 * 										if there is a logic error in the file.
+	 */
+	public Vector<String> getSimFileCode(String pNetName) throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isSimSetupDone) {
+			throw new OpnetHeavyException("Unable to load the sim file code: sim setup not applied");
+		}
+		
+		//local attributes
+		Vector<String>		mkSimCode	= new Vector<String>();
+		Vector<String>		itemCode	= null;
+		Iterator<String>	itInner		= null;
+		Iterator<String>	itVec		= null;
+		String				fileName	= ""; 
+		OpnetJob			item		= null;
+		boolean				included	= false;
+		boolean				compiled	= false;
+		
+		//check the outer map
+		if (this.networksMap.containsKey(pNetName)){
+			//get the iterator for the network
+			itInner						= this.networksMap.get(pNetName).keySet().iterator();
+			//get the sim file codes for all the networks were:
+			//		the sim file exists (the compiled value == true)
+			//		the ef file was selected (the included value == true)
+			while(itInner.hasNext()){
+				fileName				= itInner.next();
+				item					= this.networksMap.get(pNetName).get(fileName);
+				included				= item.isEfFileIncluded();
+				compiled				= item.isEfFileMKSIMCompiled();
+				if (included && compiled){
+					//get the code
+					itemCode			= item.getSimFileDTSIMCode();
+					//parse it into a string
+					itVec				= itemCode.iterator();
+					while (itVec.hasNext()){
+						mkSimCode.add(itVec.next());
+					}
+					//add an empty line
+					mkSimCode.add(this.lineBreak);
+				} else {
+					//error
+					throw new OpnetHeavyException("File " + fileName + " included == " + Boolean.toString(included) + ", compiled == " + Boolean.toString(compiled));
+				}
+			}
+			
+		} else {
+			//network not found
+			throw new OpnetHeavyException("Network name " + pNetName + " not found in the networks map");
+		}		
+		
+		//return the op_mksim code
+		return (mkSimCode);
+		
+	} // End Vector<String> getSimFileCode
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * 	Set the sim code of every ef file included and compiled correctly for each network name
+	 * 
+	 * @param		pSimFileName			the sim file name
+	 * @param		pCode					the sim code
+	 * @throws		OpnetHeavyException		if the previous action was not applied.
+	 * 										if there is a logic error in the file.
+	 */
+	public void setSimFileCode(String pSimFileName, Vector<String> pCode) throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isSimSetupDone) {
+			throw new OpnetHeavyException("Unable to load the sim file code: sim setup not applied");
+		}
+		
+		//local attributes
+		Iterator<String>	itInner		= null;
+		String				fileName	= ""; 
+		OpnetJob			item		= null;
+		String				netName		= "";
+		String[]			splited		= null;
+		boolean				found		= false;
+						
+		//get the network name
+		splited							= pSimFileName.split(".");
+		if (splited != null && splited.length > 1){
+			netName						= splited[0];
+		} else{
+			throw new OpnetHeavyException("Unable to get the network name from the sim file name '" + pSimFileName + "'");
+		}
+		
+		//check the outer map
+		if (this.networksMap.containsKey(netName)){
+			//get the iterator for the network
+			itInner						= this.networksMap.get(netName).keySet().iterator();
+			//set the sim file code
+			while(itInner.hasNext()){
+				fileName				= itInner.next();
+				item					= this.networksMap.get(netName).get(fileName);
+				//check the sim file name
+				if(item.getSimFileName().equals(pSimFileName)){
+					this.networksMap.get(netName).get(fileName).setSimFileDTSIMCode(pCode);
+					//set the flag
+					found				= true;
+					//exit
+					break;
+				} 
+			}
+			//check the correctness
+			if (!found){
+				throw new OpnetHeavyException("Unable to set the sim code for the sim file '" + pSimFileName + "'");
+			}
+			
+		} else {
+			//network not found
+			throw new OpnetHeavyException("Network name " + netName + " not found in the networks map");
+		}		
+		
+		
+	} // End void setSimFileCode
+	
+	/* ------------------------------------------------------------------------------------------------------------ */	
+	
+	/** 
+	 * Return the help of the sim file (binary file)
+	 * 
+	 * 	@return 							the sim file help
+ 	 * 	@throws 	OpnetHeavyException		if the previous operation was not applied.
+ 	 * 										if it was not possible to get the sim file help
+	 */
+	public String getSimsFileHelp() throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isSimHelpLoaded){
+			throw new OpnetHeavyException("Unable to get the sim files help: sim help not loaded");
+		}
+		
+		//local attributes
+		String			help		= "";
+		
+		//check the output
+		if (this.simFileHelp.stderrActive()){
+			throw new OpnetHeavyException("Unable to get the sim files help");
+		}				
+		//load the help
+		if (this.simFileHelp.stdoutActive()){
+			help					= this.simFileHelp.getStdout();
+		}
+		
+		//return the help
+		return(help);
+		
+	} // End String getSimsFileHelp
+		
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* PRIVATE METHODS																								*/
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -624,8 +974,8 @@ public class OpnetProject implements IOpnetProject {
 	 * Load the list of ef files related to the specified network name and the default set of parameters 
 	 * for the op_mksim command
 	 * 
-	 * @return				operation status
-	 */
+	 * @return								operation status
+	 */	
 	private boolean loadEfFileLists(){
 		
 		//status flag
@@ -675,8 +1025,74 @@ public class OpnetProject implements IOpnetProject {
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
+	/** 
+	 * Check the existence of old sim files in the project directory
+	 * 
+	 * @return								the operation status
+	 */
+	private boolean oldSimFilesFound(){
+		
+		//local attributes
+		boolean			found			= false;
+		Vector<String>	simList			= null;
+		
+		//get the sim files list
+		simList							= this.appUtils.getSimFilesList(this.projectPath);
+		
+		//check the correctness
+		if (simList != null && simList.size() > 0){
+			found						= true;
+		}
+		
+		//return the operation status
+		return(found);
+		
+	} // End boolean oldSimFilesFound
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** 
+	 * Set the efFileMKSIMCompiled flag for the specified network name
+	 * 
+	 * @param		pNetName				the net name
+	 * @param 		pFlag					the flag value to set
+	 * @return								the operation status
+	 * 
+	 */
+	private boolean setNetMKSIMCompiledFlag(String pNetName, boolean pFlag){
+			
+		//local attributes
+		boolean				opStatus	= false;
+		String				fileName	= null;
+		Iterator<String>	it			= null;
+		
+		//avoid the null pointer exception
+		if (pNetName == null){ return(opStatus); }
+		
+		//set the iterator 
+		it								= this.networksMap.get(pNetName).keySet().iterator();
+		
+		//set the flags
+		while (it.hasNext()){
+			fileName					= it.next();
+			this.networksMap.get(pNetName).get(fileName).setEfFileMKSIMCompiled(pFlag);
+		}	
+		
+		//update the status flag
+		opStatus						= true;
+		
+		//return the status
+		return(opStatus);
+		
+	} // End boolean setNetMKSIMCompiledFlag
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
 	/**
 	 * Load the default list of sim files command parameters for each simulation file (.sim)   
+	 * 
+	 * @return								the operation status
+	 * 
 	 */
 	private boolean getSimFilesDTSIMCode(){
 		
@@ -732,7 +1148,108 @@ public class OpnetProject implements IOpnetProject {
 		
 	} // End boolean loadEFFilesMKSIMCode
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/**
+	 * Set the sim file name for the pNetName element in the local networks map
+	 * 
+	 * @param		pNetName					the network name
+	 * 
+	 */
+	private void loadSimFileName(String pNetName) throws OpnetHeavyException {
+		
+		//local attributes
+		Vector<String>		simList		= null;
+		Iterator<String>	simIt		= null;
+		String				simFile		= "";
+		String				splitStr	= ".";
+		boolean				done		= false;
+		boolean				okName		= false;
+		boolean				okSuffix	= false;
+		Iterator<String>	innerIt		= null;
+		String				fileName	= "";
+		
+		//get the sim files list
+		simList							= this.appUtils.getSimFilesList(this.projectPath);
+		
+		//check the file list
+		if (simList == null || simList.size() == 0){
+			//log the error
+			this.sysUtils.printlnErr("No sim files found!", this.className + ", loadSimFileName");
+			//throw and exception
+			throw new OpnetHeavyException("Unable to set the sim file name (no sim files found)");
+		}
+		
+		//set the iterator
+		simIt							= simList.iterator();
+		
+		//get the correct file name
+		while (simIt.hasNext()){
+			//get the sim file name
+			simFile						= simIt.next();
+			
+			//check the parts
+			okName						= simFile.startsWith(pNetName + splitStr); 
+			okSuffix					= simFile.endsWith(AppUtils.SUFFIX_SIM_FILE);
+			//check the correctness 
+			if (okName && okSuffix){
+				//set the name for every object in the corresponding hash
+				innerIt					= this.networksMap.get(pNetName).keySet().iterator();
+				while (innerIt.hasNext()){
+					fileName			= innerIt.next();
+					this.networksMap.get(pNetName).get(fileName).setSimFileName(simFile);
+				}				
+				//update the flag
+				done					= true;
+				//exit
+				break;
+			}			 			
+		}
+		
+		//check the correctness
+		if (!done){
+			throw new OpnetHeavyException("Unable to set the sim file name (no matching file found)");
+		}
+		
+	} // End void loadSimFileName
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** 
+	 * Load the sim file help of the sim file
+	 * 
+	 * @param		pSimFileName				the net name
+	 */
+	private void loadSimHelp(String pNetName) {
+
+		//local attributes
+		Iterator<String>	itInner			= this.networksMap.get(pNetName).keySet().iterator();
+		String				fileName		= "";
+		String				simFileName		= "";
+		ConsoleJob			output			= null;
+
+		//update the flag
+		this.isSimHelpLoaded				= false;
+		
+		//try to load the sim file help
+		while (itInner.hasNext()){
+			//get the file name
+			fileName						= itInner.next();
+			//check the compiled status
+			if (this.networksMap.get(pNetName).get(fileName).isEfFileMKSIMCompiled()){
+				//get the sim file name
+				simFileName					= this.networksMap.get(pNetName).get(fileName).getSimFileName();
+				//get the sim file help
+				output						= this.appUtils.getSimFileHelp(simFileName);					
+			}			
+		}
+		
+		//save the help
+		this.simFileHelp					= output;
+		//update the flag
+		this.isSimHelpLoaded				= true;
+		
+	} // End void getSimsFileHelp
 		
 	/*	
 	================================================================================================================== 

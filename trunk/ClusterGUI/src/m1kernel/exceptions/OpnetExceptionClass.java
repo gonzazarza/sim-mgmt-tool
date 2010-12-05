@@ -17,9 +17,12 @@ public abstract class OpnetExceptionClass extends Exception {
 	private String							message					= "unknown";			//exception message
 	private int								type					= 0;					//exception type 
 	//static attributes
-	public static final int					MSG_TYPE_ERROR			= 0;					//error exception
-	public static final int					MSG_TYPE_WARNING		= 1;					//warning exception
-	public static final int					MSG_TYPE_INFO			= 2;					//info exception
+	/** exception type error */
+	public static final int					MSG_TYPE_ERROR			= 0;					
+	/** exception type warning */
+	public static final int					MSG_TYPE_WARNING		= 1;					
+	/** exception type information */
+	public static final int					MSG_TYPE_INFO			= 2;					
 	
 	/*	
 	================================================================================================================== 
@@ -28,6 +31,9 @@ public abstract class OpnetExceptionClass extends Exception {
 	*/
 	/**
 	 * Class constructor
+	 * 
+	 * @param		pException			the exception message
+	 * 
 	 */
 	public OpnetExceptionClass(String pException){
 		
@@ -41,6 +47,10 @@ public abstract class OpnetExceptionClass extends Exception {
 	
 	/**
 	 * Class constructor
+	 * 
+	 * @param		pException			the exception message
+	 * @param		pType				the exception type
+	 * 
 	 */
 	public OpnetExceptionClass(String pException, int pType){
 		
