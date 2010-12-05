@@ -75,9 +75,6 @@ public class AppUtils implements IAppUtils {
 		//other initializations
 		this.efFilesByNetworkNames	= new HashMap<String,Vector<String>>();
 		this.efContents				= new StringBuffer("");
-
-		//export the correct LD_LD_LIBRARY_PATH
-		this.exportLD_LIB_PATH();
 		
 		//informs the correct initialization of the class
 		this.sysUtils.printlnOut("Successful initialization", this.className);		
@@ -561,7 +558,7 @@ public class AppUtils implements IAppUtils {
 	} // End String getConsoleNetworkNames
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
-	/* COMMAND METHODS: RUN AND PARAMS SET METHODS																	*/
+	/* COMMAND METHODS: RUNs AND PARAMS SET METHODS																	*/
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
@@ -576,7 +573,6 @@ public class AppUtils implements IAppUtils {
 		//local attributes
 		Vector<String>	defParams		= new Vector<String>(); 
 		String			bashEOF			= new String(" \\");
-		String			path			= this.getCorrectArchPath();
 				
 		//------------------------------------------------------------------------------------------------------
 		//op_mksim
@@ -587,8 +583,8 @@ public class AppUtils implements IAppUtils {
 			-net_name Pattern_analysis-FT_DRB_16x16_torus_comm_patterns \
 			-opnet_dir /usr/opnet/		
 		*/		
-		//--- command 	
-		defParams.add(path + AppUtils.CMD_OP_MKSIM + bashEOF);
+		//--- command (without path)	
+		defParams.add(AppUtils.CMD_OP_MKSIM + bashEOF);
 		//--- param: env_db	
 		defParams.add("-env_db "	+ "'" + this.userHome + AppUtils.DIR_OPNET_ADMIN + AppUtils.FILE_NAME_ENV_DB + "'" + bashEOF);		
 		//--- param: net_name	
@@ -596,7 +592,7 @@ public class AppUtils implements IAppUtils {
 		//--- param: c (force recompilation)
 		defParams.add("-c " 		+ "true"	+ bashEOF);
 		//--- param: opnet_dir	
-		defParams.add("-opnet_dir "	+ AppUtils.DIR_OPNET_BINS);					
+		defParams.add("-opnet_dir "	+ AppUtils.DIR_OPNET);					
 		
 		//return the params list
 		return (defParams);		
@@ -649,15 +645,14 @@ public class AppUtils implements IAppUtils {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-	 * Get the correct path for the system architecture
+	 * Get the correct system architecture type
 	 * 
-	 * @return			the system architecture opnet path
-	 * 
+	 * @return			the system architecture type
 	 */
-	private String getCorrectArchPath(){
+	private int getCorrectArchType(){
 		
 		//local attributes
-		String			path	= "";
+		int				machine	= AppUtils.MACHINE_UNKNOWN;
 		String			arch	= "";
 		//arch outputs
 		Vector<String>	m32		= new Vector<String>();
@@ -675,83 +670,30 @@ public class AppUtils implements IAppUtils {
 			arch				= this.runCommand("uname", "-m");
 		} catch (Exception e) {
 			//show the error
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchPath");
-			//return the default path
-			return(AppUtils.DIR_OPNET_BINS);
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchType");
+			//return the default machine type
+			return(machine);
 		}
 		
 		//check the bits number
 		if (m32.contains(arch)){
 			//32 architecture
-			path				= AppUtils.DIR_OPNET32;
+			machine				= AppUtils.MACHINE_32_BITS;
 		} else if(m64.contains(arch)){
 			//64 architecture
-			path				= AppUtils.DIR_OPNET64;
+			machine				= AppUtils.MACHINE_64_BITS;
 		} else {
 			//unknown architecture
-			this.sysUtils.printlnErr("Unknown architecture '" + arch + "'", this.className + ", getCorrrectArchPath");
+			this.sysUtils.printlnErr("Unknown architecture '" + arch + "'", this.className + ", getCorrrectArchType");
 			//use default path
-			path				= AppUtils.DIR_OPNET_BINS;
+			machine				= AppUtils.MACHINE_UNKNOWN;
 		}
 		
-		//return the path
-		return(path);
+		//return the machine type
+		return(machine);
 		
-	} // End String getCorrectArchPath
-	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
-	/**
-	 * Get the correct opnet lib for the system architecture
-	 * 
-	 * @return			the system architecture opnet lib dir
-	 * 
-	 */
-	private String getCorrectArchLib(){
+	} // End String getCorrectArchType
 		
-		//local attributes
-		String			path	= "";
-		String			arch	= "";
-		//arch outputs
-		Vector<String>	m32		= new Vector<String>();
-		Vector<String>	m64		= new Vector<String>();
-		//--- 32 bits arch
-		m32.add("i386");
-		m32.add("i686");
-		//--- 64 bits arch
-		m64.add("x86_64");
-		m64.add("amd64");
-		m64.add("ia64");		
-		
-		//run the uname -m command to get the machine time
-		try {
-			arch				= this.runCommand("uname", "-m");
-		} catch (Exception e) {
-			//show the error
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getCorrectArchPath");
-			//return the default path
-			return(AppUtils.DIR_OPNET_BINS);
-		}
-		
-		//check the bits number
-		if (m32.contains(arch)){
-			//32 architecture
-			path				= AppUtils.DIR_OPNET32;
-		} else if(m64.contains(arch)){
-			//64 architecture
-			path				= AppUtils.DIR_OPNET64;
-		} else {
-			//unknown architecture
-			this.sysUtils.printlnErr("Unknown architecture '" + arch + "'", this.className + ", getCorrrectArchPath");
-			//use default path
-			path				= AppUtils.DIR_OPNET_BINS;
-		}
-		
-		//return the path
-		return(path);
-		
-	} // End String getCorrectArchLib
-	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
@@ -771,14 +713,14 @@ public class AppUtils implements IAppUtils {
 		//local attributes
 		String			output		= null;				
 		String			errors		= null;
-		Process			proc		= null;
+		Process			proc		= null;		
 		
 		//execute the command
 		try {
 			
 			//try to execute the command
 			proc					= Runtime.getRuntime().exec(pCmdAndParams);
-			
+						
 			//get the errors
 			errors					= this.streamHandler(proc.getErrorStream());
 			
@@ -787,19 +729,94 @@ public class AppUtils implements IAppUtils {
 				//get the output
 				output				= this.streamHandler(proc.getInputStream());
 			} else {
-				throw new Exception("Unable to run the command '" + pCmdAndParams[0] + "'" + this.lineBreak + " >> " + errors);		
+				throw new Exception(errors);		
 			}
-			
+						
 		} catch (IOException e) {
 			//unable to run the command
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", runCommand");
+			throw new Exception(e.getMessage() + "(>> from runCommand)");
 		}
 		
 		//return the result
 		return(output);		
 		
 	} // End String runCommand
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Create a bash script file, run the script and delete the file
+	 * 
+	 * @param	pCmdAndParams	the main command of the script
+	 * @param	pPath			the project path
+	 * @return					the operation output
+	 */
+	private String runBashScript(String pCmdAndParams, String pPath){
 		
+		//local attributes
+		int			machine			= AppUtils.MACHINE_UNKNOWN;
+		String		mPath			= "";
+		String		mLibs			= "";
+		String		bashFileName	= "";
+		String		output			= null;
+		boolean		fileRemoved		= false;
+		
+		//avoid the null pointer exception
+		if (pCmdAndParams == null){
+			this.sysUtils.printlnErr("The command to run cannot be null or an empty string", this.className + ", runBashScript");
+		}
+		
+		//get the machine architecture type
+		machine						= this.getCorrectArchType();
+		
+		//load the corresponding path and lib dir
+		switch (machine){
+		case AppUtils.MACHINE_32_BITS:
+			//32 bits architecture
+			mPath					= AppUtils.DIR_OPNET32;
+			mLibs					= AppUtils.DIR_OPNET32_LIB;
+			break;
+		case AppUtils.MACHINE_64_BITS:
+			//64 bits architecture
+			mPath					= AppUtils.DIR_OPNET64;
+			mLibs					= AppUtils.DIR_OPNET64_LIB;
+			break;
+		case AppUtils.MACHINE_UNKNOWN:
+			//unknown architecture
+			mPath					= AppUtils.DIR_OPNET_BINS;
+			mLibs					= AppUtils.DIR_OPNET_LIB;
+			break;
+		default:
+			//other???
+			mPath					= AppUtils.DIR_OPNET_BINS;
+			mLibs					= AppUtils.DIR_OPNET_LIB;
+		}
+		
+		//create the new bash script file
+		bashFileName				= this.newBashScript(mPath, mLibs, pCmdAndParams, pPath);
+		
+		//run the bash script
+		try {
+			output					= this.runCommand("bash", bashFileName);
+		} catch (Exception e) {
+			this.sysUtils.printlnErr("Unable to run the bash script file due to errors (see below)", this.className + ", runBashScript");
+			this.sysUtils.printlnErr(e.getMessage(), "");
+			//abort the operation
+			return(e.getMessage());
+		}
+		
+		//delete the bash script file
+		fileRemoved					= this.deleteBashScript(bashFileName);
+		//--- show an error if not deleted
+		if (!fileRemoved){
+			this.sysUtils.printlnErr("Bash script file '" + bashFileName + "' not removed!", this.className + ", runBashScript");
+		}
+		
+		//return the operation status
+		return(output);
+		
+	} // End runBashScript
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
@@ -884,20 +901,21 @@ public class AppUtils implements IAppUtils {
 	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** 
-	 * Run the op_mksim command for the pParamsList
+	 * Run the op_mksim command for the pCmdAndParamsList
 	 * 
-	 * @param		pParamsList			the list of parameters for the command
+	 * @param		pPath				the project path
+	 * @param		pCmdAndParamsList	the command and the list of parameters for the command
 	 * @return							the console output
 	 */
-	public String runCommandMKSim(String pParamsList) throws Exception {
+	public String runCommandMKSim(String pPath, String pCmdAndParamsList){
 		
 		//local attributes
-		String		console		= "";
-		String		output		= "";
+		String		console			= "";
+		String		output			= null;
 				
 		//try to run the command
-		console					= this.runCommand(this.getCorrectArchPath() + "op_mksim", pParamsList);
-		
+		console						= this.runBashScript(pCmdAndParamsList, pPath);
+		//--- load the output
 		if (console != null){
 			output				= console;
 		}
@@ -917,8 +935,8 @@ public class AppUtils implements IAppUtils {
 		String		out			= null;
 		
 		//run op_mksim -help command and get the output
-		try {
-			out					= this.runCommand(this.getCorrectArchPath() + "op_mksim", "-help");
+		try {			
+			out					= this.runBashScript("op_mksim -help", null);			
 		} catch (Exception e) {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getMKSimHelp");
 		}
@@ -946,7 +964,7 @@ public class AppUtils implements IAppUtils {
 		
 		//run simFile -help command and get the output
 		try {
-			out					= this.runCommand(pSimFileNameAndPath, "-help");
+			out					= this.runBashScript(pSimFileNameAndPath + " -help", null);
 		} catch (Exception e) {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", getSimFileHelp");
 		}
@@ -963,53 +981,19 @@ public class AppUtils implements IAppUtils {
 		
 		
 	} // End String getSimFileHelp
-	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
-	/**
-	 * Export the LD_LIBRARY_PATH
-	 */	
-	private void exportLD_LIB_PATH(){
 		
-		//local attributes
-		String 	console				= null;
-		String	fileName			= null;
-		boolean	deleted				= false;
-		
-		//try to run the command
-		try {
-			
-			//create the script file
-			fileName				= this.newBashScript("export LD_LIBRARY_PATH=" + this.getCorrectArchLib());
-			
-			//run the command
-			console					= this.runCommand("bash", fileName);
-			
-			//delete the script file
-			deleted					= this.deleteBashScript(fileName);
-			
-			//show the output (in this case correspond to errors)
-			if (console != null){
-				this.sysUtils.printlnErr(console, this.className + "exportLD_LIB_PATH (command run)");
-			} 
-			
-			//show an error if not deleted
-			if (!deleted){
-				this.sysUtils.printlnErr("Bash script file '" + fileName + "' not deleted", this.className + ", exportLD_LIB_PATH (delete)");
-			}
-			
-		} catch (Exception e) {
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", exportLD_LIB_PATH (runCommand op)");
-		}
-		
-	} // End exportLD_LIB_PATH
-	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
 	 * Create a new bash script file
+	 * 
+	 * @param	pPath				the user path to add to the PATH variable
+	 * @param	pLibs				the user lib path to add to the LD_LIBRARY_PATH variable
+	 * @param	pCmd				the command to run
+	 * @param	pProjPath			the project path
+	 * @return						the bash script file name
 	 */
-	private String newBashScript(String pCmd){
+	private String newBashScript(String pPath, String pLibs, String pCmd, String pProjPath){
 		
 		//local attributes
 		String 			fileDir			= null;
@@ -1055,14 +1039,29 @@ public class AppUtils implements IAppUtils {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (printWriter failed)");
 		}
 		
-		//load the script
+		//start the buffer
 		bashScript					= new StringBuffer("");
+		//--- add the bash header
 		bashScript.append("#!/bin/bash");
+		bashScript.append(this.lineBreak);		
+		bashScript.append(this.lineBreak);
+		//--- add the ld lib path		
+		bashScript.append("export LD_LIBRARY_PATH=" + pLibs);
+		bashScript.append(this.lineBreak);		
+		bashScript.append(this.lineBreak);
+		//--- add the opnet dir to the path
+		bashScript.append("export PATH=" + pPath + ":$PATH");
 		bashScript.append(this.lineBreak);
 		bashScript.append(this.lineBreak);
+		//--- if necesarry, add the cd command
+		if (pProjPath != null){
+			bashScript.append("cd " + pProjPath);
+			bashScript.append(this.lineBreak);
+			bashScript.append(this.lineBreak);
+		}
+		//--- add the command
 		bashScript.append(pCmd);
-		bashScript.append(this.lineBreak);
-		bashScript.append(this.lineBreak);
+		bashScript.append(this.lineBreak);		
 		
 		//write the file
 		bashWriter.write(bashScript.toString());

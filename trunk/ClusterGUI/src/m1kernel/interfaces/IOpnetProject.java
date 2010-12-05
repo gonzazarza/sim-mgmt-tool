@@ -42,6 +42,15 @@ public interface IOpnetProject {
 	 */
 	public void setNetworksMap() throws OpnetStrongException, OpnetLightException;
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Run the op_mksim command
+	 * 
+	 * @return				the output stream in a string 
+	 */
+	public String runMKSIMCmd() throws OpnetStrongException;
+	
 	/* ------------------------------------------------------------------------------------------------------------ */	
 	
 	/**

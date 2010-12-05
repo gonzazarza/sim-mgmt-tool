@@ -38,6 +38,10 @@ public class OpnetProject implements IOpnetProject {
 	//logic control attributes
 	private boolean										isProjecLoaded		= false;			//project load flag
 	private boolean										isNetworksMapSet	= false;			//networks map load flag
+	private boolean										isRunMKSIMDone		= false;			//op_mksim run flag
+	private boolean										isSimSetupDone		= false;			//sims setup flag
+	private boolean										isSimSubmitDone		= false;			//sims submit flag
+	private boolean										isQueueRunning		= false;			//queue checks run flag
 	
 	
 	/*	
@@ -164,6 +168,92 @@ public class OpnetProject implements IOpnetProject {
 		this.isNetworksMapSet		= true;
 		
 	} // End boolean setNetworksMap	
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Run the op_mksim command
+	 * 
+	 * @return				the output stream in a string 
+	 */
+	public String runMKSIMCmd() throws OpnetStrongException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetStrongException("Unable to run the network op_mksim code: networks map not set");
+		}
+		
+		//initialize run op_mksim done flag
+		this.isRunMKSIMDone				= false;
+				
+		//local attributes
+		Set<String>			selNetNames	= new HashSet<String>();
+		Iterator<String>	itSet		= null;
+		String				netName		= null;
+		Vector<String>		mkSimCode	= null;
+		Iterator<String>	itVec		= null;
+		StringBuffer		lineCode	= null;
+		StringBuffer		outBuffer	= new StringBuffer("");
+		String				output		= null;
+		
+		//get the list of selected networks names
+		try {			
+			//get the names
+			selNetNames					= this.getSelectedNetworksNames();			
+			//check the net names status
+			if (selNetNames != null){
+				
+				//get the iterator
+				itSet					= selNetNames.iterator();				
+				//get the op_mksim code and runs the op_mksim command
+				while (itSet.hasNext()){
+		
+					//get the net name
+					netName				= itSet.next();
+					//get the code
+					mkSimCode			= this.getNetworkMKSIMCode(netName);
+	
+					//reset the code buffer
+					lineCode			= new StringBuffer("");
+					
+					//generates a single string from the vector
+					if (mkSimCode != null && mkSimCode.size() >0){
+						//iterates over the vector
+						itVec			= mkSimCode.iterator();						
+						while (itVec.hasNext()){							
+							lineCode.append(itVec.next());
+							lineCode.append(this.lineBreak);							
+						}												
+					} else {
+						throw new OpnetStrongException("op_mksim codes vector == null");
+					}
+					
+					//run the op_mksim
+					output				= this.appUtils.runCommandMKSim(this.projectPath, lineCode.toString());
+					
+					//load the output
+					if (output != null){
+						outBuffer.append(output);
+					} else {
+						throw new OpnetStrongException("There were errors running the op_mksim command");
+					}
+				}				
+				
+			} else {
+				throw new OpnetStrongException("Selected networks names set == null");
+			}
+			
+		} catch (OpnetStrongException e) {
+			throw new OpnetStrongException(e.getMessage());
+		}		
+		
+		//update run op_mksim done flag
+		this.isRunMKSIMDone				= true;
+		
+		//return the output
+		return (outBuffer.toString());
+		
+	} // End String runMKSIMCmd
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -525,22 +615,6 @@ public class OpnetProject implements IOpnetProject {
 		return(help);
 		
 	} // End String getMKSimHelp
-	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
-	/**
-	 * 
-	 */
-	public String runMKSIMCmd(){
-		
-		//local attributes
-		String		output		= "";
-		
-		
-		//return the output
-		return (output);
-		
-	} // End String runMKSIMCmd
 	
 	
 	/* ------------------------------------------------------------------------------------------------------------ */

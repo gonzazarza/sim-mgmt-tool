@@ -316,6 +316,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppiRow3.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createTitledBorder(null, "Step 3"), 
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		//------ add listeners
+		this.bSetupSims.addActionListener(this);
 		//------ add components
 		ppiRow3.add(lGenString);
 		ppiRow3.add(Box.createHorizontalGlue());
@@ -333,6 +335,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppiRow4.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createTitledBorder(null, "Step 4"), 
 				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		//------ add listeners
+		this.bSubmitSims.addActionListener(this);
 		//------ add components
 		ppiRow4.add(lSubmitSim);
 		ppiRow4.add(Box.createHorizontalGlue());
@@ -1527,14 +1531,69 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private void startPhase3(){
 		
 		//local attributes
-		boolean 	opStatus			= false;
+		boolean 	opStatus	= false;
+		String		output		= "";
 		
-		
+		//run the op_mksim command for the selected net names
+		try {
+			output				= this.opProject.runMKSIMCmd();
+			
+			//load the output into the corresponding text area
+			this.txAppOutput.setText("");
+			this.txAppOutput.append(output);
+			
+			//set the status flag
+			opStatus			= true;
+			
+		} catch (OpnetStrongException e) {
+			//show the error message
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase3");
+			//set the status flag
+			opStatus			= false;
+			
+			this.txAppOutput.setText("");
+			this.txAppOutput.append(output);
+			
+		}
 		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_3_RUN_MKSIM, opStatus);
 		
 	} // End startPhase3
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Start the third phase of the system  in order to generate simulation string (setup simulation)
+	 */
+	private void startPhase4(){
+		
+		//local attributes
+		boolean 	opStatus			= false;
+		
+		//TODO
+		
+		//triggers the corresponding phase and actions
+		this.actionTrigger(ClusterApp.STEP_4_SETUP_SIM, opStatus);
+		
+	} // End startPhase4
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Start the third phase of the system  in order to submit simulations to queue
+	 */
+	private void startPhase5(){
+		
+		//local attributes
+		boolean 	opStatus			= false;
+		
+		//TODO
+		
+		//triggers the corresponding phase and actions
+		this.actionTrigger(ClusterApp.STEP_5_SUBMIT_SIM, opStatus);
+		
+	} // End startPhase5
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1755,7 +1814,28 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//phase 3: run command op_mksim 
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bRunMKSIM){ 
+			//show the time info message
+			JOptionPane.showMessageDialog(
+					this.mainPanel,
+					"Please wait..." + this.lineBreak + "This operation may take a few minuts",
+					"Running command",
+					JOptionPane.INFORMATION_MESSAGE);
+			//start the phase 3
 			this.startPhase3(); 
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		//phase 4: generate simulation string (setup simulation) 
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bSetupSims){ 
+			this.startPhase4(); 
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		//phase 5: submit simulation to queue 
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bSubmitSims){ 
+			this.startPhase5(); 
 		}
 		
 		//-----------------------------------------------------------------------------------------------
