@@ -1,23 +1,25 @@
 package m1kernel.exceptions;
 
 /** 
- * Opnet project exception
+ * Opnet project exception abstract class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1026
+ * @version		2010.1029
  */
-public class OpnetException extends Exception {
-
+public abstract class OpnetExceptionClass extends Exception {
+	
 	/*	
 	================================================================================================================== 
 	Attributes																										
 	==================================================================================================================
-	*/
+	*/	
 	private static final long 				serialVersionUID 		= 1L;					//default serial version
 	private String							message					= "unknown";			//exception message
-	private String							title					= "";					//exception title
 	private int								type					= 0;					//exception type 
-	
+	//static attributes
+	public static final int					MSG_TYPE_ERROR			= 0;					//error exception
+	public static final int					MSG_TYPE_WARNING		= 1;					//warning exception
+	public static final int					MSG_TYPE_INFO			= 2;					//info exception
 	
 	/*	
 	================================================================================================================== 
@@ -27,34 +29,31 @@ public class OpnetException extends Exception {
 	/**
 	 * Class constructor
 	 */
-	public OpnetException(String pException, int pType){
+	public OpnetExceptionClass(String pException){
 		
 		//call superclass constructor
 		super(pException);
 		//save exception message
 		this.message		= pException;
-		//save exception type
-		this.type			= pType;
-		
-	} // End constructor
-
-	/**
-	 * Class constructor
-	 */
-	public OpnetException(String pException, String pTitle, int pType){
-		
-		//call superclass constructor
-		super(pException);
-		//save exception message
-		this.message		= pException;
-		//save exception title
-		this.title			= pTitle;
-		//save exception type
-		this.type			= pType;		
 		
 	} // End constructor
 	
-
+	
+	/**
+	 * Class constructor
+	 */
+	public OpnetExceptionClass(String pException, int pType){
+		
+		//call superclass constructor
+		super(pException);
+		//save exception message
+		this.message		= pException;
+		//save exception type
+		this.type			= pType;	
+		
+	} // End constructor
+	
+		
 	/*	
 	================================================================================================================== 
 	Getters and Setters																										
@@ -64,12 +63,8 @@ public class OpnetException extends Exception {
 	public String getMessage() { return message; }
 
 	
-	/** @return the title */
-	public String getTitle(){ return title; }
-	
-	
 	/** @return the type */ 
 	public int getType() { return type; }	
 	
-		
-} // End OpnetException
+
+} // End OpnetExceptionClass
