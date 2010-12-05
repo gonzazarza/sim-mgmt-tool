@@ -7,17 +7,15 @@ import javax.swing.JOptionPane;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 //other classes
-import m1kernel.AppKernel;
 import m1kernel.SysUtils;
 //interfaces
-import m1kernel.interfaces.IAppKernel;
 import m1kernel.interfaces.ISysUtils;
 
 /**
  * GUI serving as the main interface between OPNET Modeler 14.0 and the IBM cluster at CAOS.
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1018
+ * @version		2010.1028
  */
 public class ClusterGUI extends WindowAdapter {
 
@@ -27,7 +25,7 @@ public class ClusterGUI extends WindowAdapter {
 	==================================================================================================================
 	*/
 	private ISysUtils				sysUtils			= null;							//system utilities class
-	private IAppKernel				appKernel			= null;							//application kernel				
+	private ClusterApp				appCluster			= null;							//application kernel
 	private String					className			= "unknown";					//current class name	
 	//static attributes
 	private static final long 		serialVersionUID 	= 1L;							//default serial version
@@ -46,10 +44,10 @@ public class ClusterGUI extends WindowAdapter {
         this.sysUtils				= new SysUtils();
         
 		//initialize the application kernel
-		this.appKernel				= new AppKernel(this.sysUtils);
+        this.appCluster				= new ClusterApp(this.sysUtils);
 		
 		//initialize components
-		this.appKernel.initComponents();
+	    this.appCluster.initComponents();
 		
 		//get and store the name of the class
 		this.className				= this.getClass().getName();
@@ -73,13 +71,13 @@ public class ClusterGUI extends WindowAdapter {
 		JFrame		mainFrame		= new JFrame(ClusterGUI.APP_NAME);
 				
 		//set the window title
-		mainFrame.setTitle(mainGUI.appKernel.getFrameTitle());	
+		mainFrame.setTitle(mainGUI.appCluster.getFrameTitle());
 	
 		//set the exit option
 		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
 		//add contents to the window
-		mainFrame.add(mainGUI.appKernel.getMainPanel());
+		mainFrame.add(mainGUI.appCluster.getMainPanel());
 		
 		//add window listener windowClosing
 		mainFrame.addWindowListener(mainGUI);
@@ -115,7 +113,7 @@ public class ClusterGUI extends WindowAdapter {
 		
 		//confirms the exit operation		
 		int returnVal	= JOptionPane.showOptionDialog(
-							this.appKernel.getMainPanel(),
+							this.appCluster.getMainPanel(),
 							"Exit " + ClusterGUI.APP_NAME + "?",
 							"Confirm exit",
 							JOptionPane.YES_NO_OPTION, 
