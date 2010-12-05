@@ -60,7 +60,7 @@ public interface IAppUtils {
 	 * @param	fileName		input file name
 	 * @return					operation status
 	 */
-	public boolean loadFile(String filePath, String fileName);
+	public boolean loadFileContent(String filePath, String fileName);
 		
 	
 	/** 
@@ -70,7 +70,7 @@ public interface IAppUtils {
 	 * 	@param	pUniqueList		the unique list option flag
 	 *  @return					the parsed list of network names
 	 */
-	public Vector<String> parseNetworkNames(Vector<String> pFileList, boolean pUniqueList);
+	public Vector<String> parseFileNamesList(Vector<String> pFileList, boolean pUniqueList);
 	
 	
 	/** Return the list of network names found */
@@ -101,7 +101,20 @@ public interface IAppUtils {
 	 */
 	public Vector<String> getDefaultParamsDTSIM(String pSimPath, String pSimName);
 	
-		
+	
+	/**	@return the list of ef files for the specified network name */
+	public Vector<String> getEFFiles(String pNetName);
+	
+	
+	/** 
+	 * Parse the file name pFileName
+	 * 
+	 * @param		pFileName	the file name to parse
+	 * @return					the parsed file name 
+	 */
+	public String parseSingleFileName(String pFileName);
+	
+	
 	/*
 	================================================================================================================== 
 	Getters and Setters																										
@@ -110,16 +123,17 @@ public interface IAppUtils {
 	/** @return the fileList */
 	public Vector<String> getFileList();
 	
-	
 	/** @return the efContents */
 	public StringBuffer getEfContents();
-	
 	
 	/** @return the networkNames */
 	public Vector<String> getNetworkNames();
 	
+	/** @return the uniqueNetworkNames */
+	public Vector<String> getUniqueNetworkNames();
 	
 	/** @return the parsedNetworkNames */
 	public String[][] getParsedNetworkNames();
 	
+		
 } // End interface IAppUtils
