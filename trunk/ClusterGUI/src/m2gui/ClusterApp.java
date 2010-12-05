@@ -143,14 +143,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//set the utilities class
 		this.sysUtils				= pUtils;
 		
-		//initialize the opnet project
-		this.opProject				= new OpnetProject(this.sysUtils);
-		
 		//get and store the name of the class
 		this.className				= this.getClass().getName();
 		
+        //inform the start of the initialization of the class
+		this.sysUtils.printlnOut("... Init: start ...", this.className);
+		
+		//initialize the opnet project
+		this.opProject				= new OpnetProject(this.sysUtils);
+				
 		//inform the correct initialization of the class
-		this.sysUtils.printlnOut("Successful initialization", this.className);		
+		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);		
 		
 	} // End constructor
 	
@@ -1195,8 +1198,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_FAIL);
 					
 					//apply actions
-					//--- update the list of generated sim siles
-					this.updateSimsListContent();
+					
 					//show error messages
 										
 				}

@@ -68,13 +68,17 @@ public class SysUtils implements ISysUtils {
 		} else {
 			this.log_file_dir		= SysUtils.DIR_OPT_USER_HOME;
 		}
+		
 		//creates the log file if necessary
 		if (log_output){ 
 			this.loadLogFile();
 		}
-				
+		
+		//inform the start of the initialization of the class
+		this.printlnOut("... Init: start ...", this.className);
+		
 		//informs the correct initialization of the class
-		this.printlnOut("Successful initialization", this.className);
+		this.printlnOut("... Init: DONE! ...", this.className);
 		
 	} // End constructor
 	

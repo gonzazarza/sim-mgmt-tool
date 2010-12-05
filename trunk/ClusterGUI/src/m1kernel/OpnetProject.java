@@ -66,6 +66,9 @@ public class OpnetProject implements IOpnetProject {
 		this.sysUtils				= pSysUtils;
 		this.appUtils				= new AppUtils(this.sysUtils);
 		
+		//informs the start of the initialization of the class
+		this.sysUtils.printlnOut("... Init: start ...", this.className);
+				
 		//load separators
 		this.fileSeparator			= System.getProperty("file.separator");
 		this.lineBreak				= System.getProperty("line.separator");
@@ -74,7 +77,7 @@ public class OpnetProject implements IOpnetProject {
 		this.networksMap			= new HashMap<String,HashMap<String,OpnetJob>>();
 		
 		//inform the correct initialization of the class
-		this.sysUtils.printlnOut("Successful initialization", this.className);		
+		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);		
 		
 	} // End constructor
 	
@@ -212,6 +215,7 @@ public class OpnetProject implements IOpnetProject {
 		StringBuffer		lineCode	= null;
 		ConsoleJob			item		= null;
 		Vector<String>		outVec		= new Vector<String>();
+		boolean				selected	= false;
 		
 		
 		//get the list of selected networks names
@@ -226,6 +230,11 @@ public class OpnetProject implements IOpnetProject {
 				//get the op_mksim code and runs the op_mksim command
 				while (itSet.hasNext()){
 		
+					//update the selected flag
+					if (!selected){
+						selected		= true;
+					}
+					
 					//get the net name
 					netName				= itSet.next();
 					//get the code
@@ -269,6 +278,13 @@ public class OpnetProject implements IOpnetProject {
 					
 				}
 				
+				//last check!
+				if (selected){
+					//update run op_mksim done flag
+					this.isRunMKSIMDone			= true;
+				}
+				
+				
 			} else {
 				throw new OpnetHeavyException("Selected networks names set == null");
 			}
@@ -276,9 +292,6 @@ public class OpnetProject implements IOpnetProject {
 		} catch (OpnetHeavyException e) {
 			throw new OpnetHeavyException(e.getMessage());
 		}		
-		
-		//update run op_mksim done flag
-		this.isRunMKSIMDone				= true;
 		
 		//return the output
 		return (outVec);
@@ -946,8 +959,13 @@ public class OpnetProject implements IOpnetProject {
 	public String getSimsFileHelp() throws OpnetHeavyException {
 		
 		//check the previous operation status
+		//--- op_mksim done
+		if (!this.isRunMKSIMDone){
+			throw new OpnetHeavyException("Unable to get the sim files help: op_mksim command not applied");
+		}
+		//--- sim help loaded
 		if (!this.isSimHelpLoaded){
-			throw new OpnetHeavyException("Unable to get the sim files help: sim help not loaded");
+			throw new OpnetHeavyException("Unable to get the sim files help: sim help was not previously loaded");
 		}
 		
 		//local attributes

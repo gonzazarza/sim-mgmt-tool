@@ -60,18 +60,21 @@ public class AppUtils implements IAppUtils {
 	 */
 	public AppUtils(ISysUtils pSysUtils){
 		
-		//get the system line separator
-		this.lineBreak					= System.getProperty("line.separator");
-		
-		//get the user dir property
-		this.userHome					= System.getProperty("user.home");
-		
 		//get and stores the name of the class
 		this.className					= this.getClass().getName();	
 		
 		//set the system utilities class
 		this.sysUtils					= pSysUtils;
+			
+		//informs the start of the initialization of the class
+		this.sysUtils.printlnOut("... Init: start ...", this.className);
 		
+		//get the system line separator
+		this.lineBreak					= System.getProperty("line.separator");
+		
+		//get the user dir property
+		this.userHome					= System.getProperty("user.home");
+					
 		//initializes the file list and network names vectors
 		this.efFileList				= new Vector<String>();
 		this.networkNames			= new Vector<String>();
@@ -83,7 +86,7 @@ public class AppUtils implements IAppUtils {
 		this.efContents				= new StringBuffer("");
 		
 		//informs the correct initialization of the class
-		this.sysUtils.printlnOut("Successful initialization", this.className);		
+		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);
 		
 	} // End constructor
 	
@@ -838,7 +841,10 @@ public class AppUtils implements IAppUtils {
 		
 		//avoid the null pointer exception
 		if (pCmdAndParams == null){
-			this.sysUtils.printlnErr("The command to run cannot be null or an empty string", this.className + ", runBashScript");
+			//load the error
+			output.setStderr("The command to run cannot be null or an empty string");
+			//abort
+			return(output);
 		}
 		
 		//get the machine architecture type
@@ -875,10 +881,14 @@ public class AppUtils implements IAppUtils {
 			output					= this.runCommand("bash", bashFileName);
 		} catch (Exception e) {
 			this.sysUtils.printlnErr("Unable to run the bash script file due to errors (see below)", this.className + ", runBashScript");
-			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                ERROR LIST BEGINS                #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 			this.sysUtils.printlnErr(e.getMessage(), null);
-			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
-			//abort the operation
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                 ERROR LIST ENDS                 #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+						//abort the operation
 			return(output);
 		}
 		
@@ -996,11 +1006,15 @@ public class AppUtils implements IAppUtils {
 
 		//check the output
 		if (consoleOut.stderrActive()){
-			this.sysUtils.printlnErr("Unable to run the 'op_mksim' command due to erros (see below)", this.className + ", runCommandMKSim");
-			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr("Unable to run the 'op_mksim' command due to errors (see below)", this.className + ", runCommandMKSim");
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                ERROR LIST BEGINS                #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 			this.sysUtils.printlnErr(consoleOut.getStderr(), null);
-			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
-		}
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                 ERROR LIST ENDS                 #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			}
 		
 		//return the status flag
 		return(consoleOut);
@@ -1024,10 +1038,14 @@ public class AppUtils implements IAppUtils {
 		
 		//check the output
 		if (out.stderrActive()){
-			this.sysUtils.printlnErr("Unable to run the 'op_mksim -help' command due to erros (see below)", this.className + ", getMKSimHelp");
-			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr("Unable to run the 'op_mksim -help' command due to errors (see below)", this.className + ", getMKSimHelp");
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                ERROR LIST BEGINS                #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 			this.sysUtils.printlnErr(out.getStderr(), null);
-			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                 ERROR LIST ENDS                 #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 		}
 		
 		//return the op_mksim help
@@ -1053,9 +1071,13 @@ public class AppUtils implements IAppUtils {
 		//check the output
 		if (!out.stdoutActive()){
 			this.sysUtils.printlnErr("Unable to run the sim file help command due to errors (see below)", this.className + ", getSimFileHelp");
-			this.sysUtils.printlnErr("( ----- Begin errors list ----- )", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                ERROR LIST BEGINS                #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 			this.sysUtils.printlnErr(out.getStderr(), null);
-			this.sysUtils.printlnErr("( -----  End errors list  ----- )", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
+			this.sysUtils.printlnErr("#                 ERROR LIST ENDS                 #", null);
+			this.sysUtils.printlnErr("#-------------------------------------------------#", null);
 		}
 		
 		//return the sim file help

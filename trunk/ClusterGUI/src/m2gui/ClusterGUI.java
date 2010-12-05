@@ -43,17 +43,20 @@ public class ClusterGUI extends WindowAdapter {
 		//start the system-based utilities
         this.sysUtils				= new SysUtils();
         
+		//get and store the name of the class
+		this.className				= this.getClass().getName();
+        
+        //inform the start of the initialization of the class
+		this.sysUtils.printlnOut("... Init: start ...", this.className);
+        
 		//initialize the application kernel
         this.appCluster				= new ClusterApp(this.sysUtils);
 		
 		//initialize components
 	    this.appCluster.initComponents();
-		
-		//get and store the name of the class
-		this.className				= this.getClass().getName();
-		
+				
 		//inform the correct initialization of the class
-		this.sysUtils.printlnOut("Successful initialization", this.className);
+		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);
 
 	} // End constructor          
 	
@@ -124,7 +127,7 @@ public class ClusterGUI extends WindowAdapter {
 		
 		if (returnVal == JOptionPane.YES_OPTION){
 			//log the closing operation		
-			this.sysUtils.printlnOut("Closing the " + ClusterGUI.APP_NAME + " application now...", this.className);
+			this.sysUtils.printlnOut("... Closing the " + ClusterGUI.APP_NAME + " application now ...", this.className);
 			//exit application
 			System.exit(0);
 		} 

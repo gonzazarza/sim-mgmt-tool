@@ -42,15 +42,18 @@ public class PropsTableModel extends AbstractTableModel {
 		//get and stores the name of the class
 		this.className				= this.getClass().getName();	
 		
+		//set the system utilities class
+		this.sysUtils				= pSysUtils;
+
+        //inform the start of the initialization of the class
+		this.sysUtils.printlnOut("... Init: start ...", this.className);
+		
 		//set the column names and the data
 		this.columnNames			= pColumnNames;
 		this.data					= pData;
-		
-		//set the system utilities class
-		this.sysUtils				= pSysUtils;
-		
+				
 		//informs the correct initialization of the class
-		this.sysUtils.printlnOut("Successful initialization", this.className);
+		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);
 		
 	} // End constructor
 	
