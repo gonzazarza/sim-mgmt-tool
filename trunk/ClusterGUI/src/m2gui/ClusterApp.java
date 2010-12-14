@@ -499,7 +499,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow1			= new JPanel();
 		String				userPrompt		= " No output";
-		this.txAppOutput					= new JTextArea(userPrompt, 25, 60);
+		this.txAppOutput					= new JTextArea(userPrompt, 20, 60);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
