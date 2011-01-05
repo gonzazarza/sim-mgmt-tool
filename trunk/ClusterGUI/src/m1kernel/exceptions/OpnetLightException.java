@@ -53,9 +53,11 @@ public class OpnetLightException extends OpnetExceptionClass {
 	==================================================================================================================
 	*/
 	/** @return the message */
+	@Override
 	public String getMessage() { return message; }
 
 	/** @return the type */ 
+	@Override
 	public int getType() { return type; }	
 	
 		

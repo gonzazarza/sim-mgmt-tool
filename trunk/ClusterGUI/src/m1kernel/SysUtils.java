@@ -89,6 +89,7 @@ public class SysUtils implements ISysUtils {
 	==================================================================================================================
 	*/
 	/** Finalize method */
+	@Override
 	public void finalize(){
 		//closes the log file
 		if (this.logFileOpen){

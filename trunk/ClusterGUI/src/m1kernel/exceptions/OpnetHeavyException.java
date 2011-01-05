@@ -49,6 +49,7 @@ public class OpnetHeavyException extends OpnetExceptionClass {
 	==================================================================================================================
 	*/
 	/** @return the message */
+	@Override
 	public String getMessage() { return message; }
 
 	
@@ -57,6 +58,7 @@ public class OpnetHeavyException extends OpnetExceptionClass {
 	
 	
 	/** @return the type */ 
+	@Override
 	public int getType() { return type; }	
 	
 		

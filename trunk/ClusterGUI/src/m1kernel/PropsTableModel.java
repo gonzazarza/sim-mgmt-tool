@@ -110,7 +110,8 @@ public class PropsTableModel extends AbstractTableModel {
 	/* ------------------------------------------------------------------------------------------------------------ */
 
     /** @return the column name */
-    public String getColumnName(int col) {
+    @Override
+	public String getColumnName(int col) {
         return(columnNames[col]);
          
     } // End String getColumName
@@ -125,7 +126,8 @@ public class PropsTableModel extends AbstractTableModel {
     
 	/* ------------------------------------------------------------------------------------------------------------ */
     
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+	@SuppressWarnings({"unchecked"})
     /** @return the column class */
 	public Class getColumnClass(int c) {
          return getValueAt(0, c).getClass();
@@ -135,7 +137,8 @@ public class PropsTableModel extends AbstractTableModel {
 	/* ------------------------------------------------------------------------------------------------------------ */
         
     /** @return the editable property of a cell */
-    public boolean isCellEditable(int row, int col) {
+    @Override
+	public boolean isCellEditable(int row, int col) {
         return (false);
 
     } // End boolean isCellEditable
@@ -143,7 +146,8 @@ public class PropsTableModel extends AbstractTableModel {
 	/* ------------------------------------------------------------------------------------------------------------ */
 
     /** Set the cell value */
-    public void setValueAt(Object value, int row, int col) {
+    @Override
+	public void setValueAt(Object value, int row, int col) {
     
         data[row][col] = value;
         // Normally, one should call fireTableCellUpdated() when 

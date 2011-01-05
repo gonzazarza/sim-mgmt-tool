@@ -70,6 +70,7 @@ public abstract class OpnetExceptionClass extends Exception {
 	==================================================================================================================
 	*/
 	/** @return the message */
+	@Override
 	public String getMessage() { return message; }
 
 	
