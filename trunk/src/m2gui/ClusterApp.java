@@ -1348,21 +1348,38 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//get the project path
 			projectPath					= this.dFileChooser.getSelectedFile().getParent();
 			
-			//load the project
-			try {
-				this.opProject.loadProject(projectPath, projectName);
-				
-			} catch (OpnetLightException e) {
-				//this warning should be shown in the text area
-				this.printAppOutputText(" WARNING:  " + e.getMessage(), ClusterApp.TX_STDERR, true);
-				//log the warning
-				this.sysUtils.printlnWar(e.getMessage(), this.className + ", startPhase1 (loadProject)");
-
-			} catch (OpnetHeavyException e) {
-				this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase1 (loadProject)");
-				opStatus				= false;
-			}			
+			//one last check
+			if (projectName.endsWith(".prj")){
+						
+				//load the project
+				try {
+					this.opProject.loadProject(projectPath, projectName);
+					
+				} catch (OpnetLightException e) {
+					//this warning should be shown in the text area
+					this.printAppOutputText(" WARNING:  " + e.getMessage(), ClusterApp.TX_STDERR, true);
+					//log the warning
+					this.sysUtils.printlnWar(e.getMessage(), this.className + ", startPhase1 (loadProject)");
+					//show a popup warning message
+					JOptionPane.showMessageDialog(
+							this.mainPanel,
+							e.getMessage() + ".",
+							"Warning",
+							JOptionPane.WARNING_MESSAGE);	
 			
+				} catch (OpnetHeavyException e) {
+					this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase1 (loadProject)");
+					opStatus			= false;
+				}			
+			
+			} else {
+				//this error should be shown in the text area
+				this.printAppOutputText(" ERROR: Project not found", ClusterApp.TX_STDERR, true);
+				//log the error
+				this.sysUtils.printlnErr("Project not found", this.className + ", startPhase1 (loadProject)");
+				opStatus				= false;
+			}
+				
 		} else if (returnVal == JFileChooser.ERROR_OPTION){
 			//handle the possible error
 			this.sysUtils.printlnErr("JFileChooser dialog dismissed", this.className + ", startPhase1 (JFileChooser.ERROR_OPTION)");
