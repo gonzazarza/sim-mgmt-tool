@@ -227,6 +227,19 @@ public interface IOpnetProject {
 	 */
 	public String getSimsFileHelp() throws OpnetHeavyException;
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Submit the corresponding jobs to the queue
+	 * 
+	 * 
+	 * @return								operation status
+	 * @throws		OpnetHeavyException		in case of a DrmaaException
+	 * 
+	 */
+	public boolean submitSimJobs() throws OpnetHeavyException ;
+	
+	
 	/*	
 	================================================================================================================== 
 	Getters and Setters																										

@@ -1507,8 +1507,19 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//local attributes
 		boolean 	opStatus			= false;
+		boolean		success				= false;
 		
 		//TODO
+		try {
+			
+			success						= this.opProject.submitSimJobs();
+			
+		} catch (OpnetHeavyException e) {
+			//show the error message
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
+			//set the status flag
+			opStatus					= false;				
+		}
 		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_5_SUBMIT_SIM, opStatus);

@@ -6,6 +6,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
+//drmaa
+import org.ggf.drmaa.DrmaaException;
+import org.ggf.drmaa.Session;
+import org.ggf.drmaa.SessionFactory;
 //exceptions
 import m1kernel.exceptions.OpnetExceptionClass;
 import m1kernel.exceptions.OpnetHeavyException;
@@ -991,7 +995,37 @@ public class OpnetProject implements IOpnetProject {
 		return(help);
 		
 	} // End String getSimsFileHelp
+	
+	/* ------------------------------------------------------------------------------------------------------------ */	
+	
+	/**
+	 * Submit the corresponding jobs to the queue
+	 * 
+	 * 
+	 * @return								operation status
+	 * @throws		OpnetHeavyException		in case of a DrmaaException	
+	 *  
+	 */
+	public boolean submitSimJobs() throws OpnetHeavyException {
 		
+		boolean				status		= false;
+		SessionFactory		factory		= SessionFactory.getFactory();
+		Session				session		= factory.getSession();
+		
+		try{
+			
+			session.init("");
+			session.exit();
+			
+		} catch (DrmaaException e){
+			throw new OpnetHeavyException("Unable to init the job session");
+		}
+		
+		//return the operation status
+		return(status);
+		
+	} // End boolean submitSimJobs
+	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* PRIVATE METHODS																								*/
 	/* ------------------------------------------------------------------------------------------------------------ */
