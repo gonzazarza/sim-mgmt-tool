@@ -1814,7 +1814,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see javax.swing.event.ChangeListener#stateChanged(javax.swing.event.ChangeEvent)
 	 */
-	@Override
 	public void stateChanged(ChangeEvent e) {
 		
 		//-----------------------------------------------------------------------------------------------
@@ -1845,7 +1844,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
-	@Override
 	public void actionPerformed(ActionEvent e) {
 		
 		//-----------------------------------------------------------------------------------------------
@@ -2163,7 +2161,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
 	 */
-	@Override
 	public void mouseClicked(MouseEvent e) {
 		
 		//-----------------------------------------------------------------------------------------------
@@ -2270,7 +2267,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
 	 */
-	@Override
 	public void mouseEntered(MouseEvent e) { /* nothing to do */ }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -2278,7 +2274,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
 	 */
-	@Override
 	public void mouseExited(MouseEvent e) { /* nothing to do */ }
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -2286,7 +2281,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
 	 */
-	@Override
 	public void mousePressed(MouseEvent e) { /* nothing to do */ }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -2294,7 +2288,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
 	 */
-	@Override
 	public void mouseReleased(MouseEvent e) { /* nothing to do */ }
 
 	
@@ -2307,7 +2300,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
 	 */
-	@Override
 	public void keyPressed(KeyEvent e) {
 		
 		//-----------------------------------------------------------------------------------------------
@@ -2416,7 +2408,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
 	 */
-	@Override
 	public void keyReleased(KeyEvent e) { /* nothing to do */ }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -2424,7 +2415,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* (non-Javadoc)
 	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
 	 */
-	@Override
 	public void keyTyped(KeyEvent e) { /* nothing to do */ }
 	
 	/*
@@ -2432,7 +2422,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	Document Listener																										
 	==================================================================================================================	
 	*/
-	@Override
 	public void insertUpdate(DocumentEvent e) {
 		
 		//-------------------------------------------------------------------------------------------
@@ -2459,7 +2448,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 
-	@Override
 	public void removeUpdate(DocumentEvent e) {
 
 		//-------------------------------------------------------------------------------------------
@@ -2487,7 +2475,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 
-	@Override
 	public void changedUpdate(DocumentEvent e) { /* nothing to do */ }
 
 	

@@ -109,7 +109,6 @@ public class SysUtils implements ISysUtils {
 	 * @param text			Error text string
 	 * @param className		Name of the invoking class
 	 */
-	@Override
 	public void printlnErr(String text, String className){	
 		if (className != null){
 			this.println("err", (text + "  [Class " + className + "] "));
@@ -124,7 +123,6 @@ public class SysUtils implements ISysUtils {
 	 * 
 	 * @param text			Message text string
 	 */
-	@Override
 	public void printlnOut(String text, String className){
 		if (className != null){
 			this.println("out", (text + "  [Class " + className + "] "));
@@ -139,7 +137,6 @@ public class SysUtils implements ISysUtils {
 	 * 
 	 * @param text			Warning text string 
 	 */
-	@Override
 	public void printlnWar(String text, String className){
 		if (className != null){
 			this.println("war", (text + "  [Class " + className + "] "));
@@ -154,7 +151,6 @@ public class SysUtils implements ISysUtils {
 	 * 
 	 * @param text			Error text string
 	 */
-	@Override
 	public void printErr(String text){
 		this.print("err", (text));	
 	} // End printErr
@@ -165,7 +161,6 @@ public class SysUtils implements ISysUtils {
 	 * 
 	 * @param text			Message text string
 	 */
-	@Override
 	public void printOut(String text){
 		this.print("out", (text));
 	} // End printOut
@@ -176,7 +171,6 @@ public class SysUtils implements ISysUtils {
 	 * 
 	 * @param text			warning text string
 	 */
-	@Override
 	public void printWar(String text){
 		this.print("war", (text));
 	} // End printWar
@@ -397,7 +391,6 @@ public class SysUtils implements ISysUtils {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** Closes the log file and updates its flag */
-	@Override
 	public void closeLogFile(){
 		//checks if the file is open
 		if (!logFileOpen){ return; }		
@@ -417,19 +410,16 @@ public class SysUtils implements ISysUtils {
 	==================================================================================================================	
 	*/
 	/** @return the existErrors */
-	@Override
 	public boolean existErrors() { return existErrors; }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** @return the existWarnings */
-	@Override
 	public boolean existWarnings() { return existWarnings; }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** @return the machineName */
-	@Override
 	public String getMachineName() { return machineName; }
 
 	/* ------------------------------------------------------------------------------------------------------------ */
