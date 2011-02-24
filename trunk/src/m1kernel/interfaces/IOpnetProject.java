@@ -230,12 +230,15 @@ public interface IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-	 * Submit the corresponding jobs to the queue
+Submit the corresponding jobs to the queue
 	 * 
 	 * 
 	 * @return								operation status
-	 * @throws		OpnetHeavyException		in case of a DrmaaException
-	 * 
+	 * @throws		OpnetHeavyException		in case of a DrmaaException	
+	 *  									in case of an InternalEception
+	 *  									in case of an IllegalArgumentException
+	 *  									in case of an OutOfMemory Error
+	 *  
 	 */
 	public boolean submitSimJobs() throws OpnetHeavyException ;
 	

@@ -10,7 +10,7 @@ import m1kernel.ConsoleJob;
  * Interface to access to the application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1118
+ * @version		2011.0224
  */
 public interface IAppUtils {
 
@@ -204,6 +204,24 @@ public interface IAppUtils {
 	 * @return 							the help for the file pSimFileName 
 	 */
 	public ConsoleJob getSimFileHelp(String pPath, String pSimFileName);
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Create a new bash script file (generic)
+	 * 
+	 * @param	pScriptPath			the script path
+	 * @param	pCmd				the command to run
+	 * @return						the bash script file name
+	 */
+	public String newGenericBashScript(String pScriptPath, String pCmd);
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Delete the bash script file pFileName
+	 */
+	public boolean deleteBashScript(String pFileName);
 	
 	/*
 	================================================================================================================== 

@@ -6,8 +6,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-//drmaa
 import org.ggf.drmaa.DrmaaException;
+import org.ggf.drmaa.InternalException;
 import org.ggf.drmaa.SessionFactory;
 import org.ggf.drmaa.Session;
 import org.ggf.drmaa.JobTemplate;
@@ -24,7 +24,7 @@ import m1kernel.interfaces.ISysUtils;
  * Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0217
+ * @version		2011.0224
  */
 public class OpnetProject implements IOpnetProject {
 
@@ -1005,34 +1005,59 @@ public class OpnetProject implements IOpnetProject {
 	 * 
 	 * @return								operation status
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
-	 *  
+	 *  									in case of an InternalEception
+	 *  									in case of an IllegalArgumentException
+	 *  									in case of an OutOfMemory Error 
 	 */
 	public boolean submitSimJobs() throws OpnetHeavyException {
 		
 		boolean				status		= false;
 		SessionFactory		factory		= SessionFactory.getFactory();
 		Session				session		= factory.getSession();
+		JobTemplate 		jt			= null; 
+		String 				id			= "NO-ID";
+		
+		//TODO: the code below should be called for each job to be sent
 		
 		try{
 			
-			session.init("");
-			
-			JobTemplate jt = session.createJobTemplate();
-			jt.setRemoteCommand("sleeper.sh");
-			jt.setArgs(new String[]{"5"});
+			//initialize the DRMAA session
+			session.init(null);
+			//init the job template
+			jt							= session.createJobTemplate();
+				
+			jt.setJobName("sh2");
+		
+//			jt.setWorkingDirectory(java.lang.System.getProperty("user.dir"));
+//			jt.setRemoteCommand("/bin/ls");
+//			jt.setArgs(new String[] {"-l","-a"});
 						
-			String id = session.runJob(jt);
+			String file_name = this.appUtils.newGenericBashScript(null, "echo HOLA_GONZA >> $HOME/hello_nurse.txt");
+			jt.setRemoteCommand("sh");
+			jt.setArgs(new String[] {file_name});
 			
+			id = session.runJob(jt);
+			
+			System.out.println("Job successfully submitted ID: " + id);
+							
+			//TODO: put this with the job name and id to the output... don't know how
 			System.out.println("Your job has been submitted with id " + id);
+//			System.out.println("File name: " + file_name);			
 			
+			//destroy the job template
 			session.deleteJobTemplate(jt);
-
-			
+			//finalize the DRMAA session (it does not affect the jobs)
 			session.exit();
 			
+		} catch (OutOfMemoryError e){
+			throw new OpnetHeavyException("OutOfMemory Error: " + e.getMessage());
 		} catch (DrmaaException e){
-			throw new OpnetHeavyException("Unable to init the job session");
-		}
+			throw new OpnetHeavyException("DRMAA Exception: " + e.getMessage());
+		} catch (InternalException e){
+			throw new OpnetHeavyException("Internal Exception: " + e.getMessage());
+		} catch (IllegalArgumentException e){
+			throw new OpnetHeavyException("Illegal Argument Exception: " + e.getMessage());
+		} 
 		
 		//return the operation status
 		return(status);

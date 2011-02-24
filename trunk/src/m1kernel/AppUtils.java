@@ -24,7 +24,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0217
+ * @version		2011.0224
  */
 public class AppUtils implements IAppUtils {
 
@@ -1137,15 +1137,19 @@ public class AppUtils implements IAppUtils {
 		bashScript.append(this.lineBreak);		
 		bashScript.append(this.lineBreak);
 		//--- add the ld lib path		
-		bashScript.append("export LD_LIBRARY_PATH=" + pLibs);
-		bashScript.append(this.lineBreak);		
-		bashScript.append(this.lineBreak);
+		if (pLibs != null && pLibs != ""){
+			bashScript.append("export LD_LIBRARY_PATH=" + pLibs);
+			bashScript.append(this.lineBreak);		
+			bashScript.append(this.lineBreak);
+		}
 		//--- add the opnet dir to the path
-		bashScript.append("export PATH=" + pPath + ":$PATH");
-		bashScript.append(this.lineBreak);
-		bashScript.append(this.lineBreak);
-		//--- if necesarry, add the cd command
-		if (pProjPath != null){
+		if (pPath != null && pPath != ""){
+			bashScript.append("export PATH=" + pPath + ":$PATH");
+			bashScript.append(this.lineBreak);
+			bashScript.append(this.lineBreak);
+		}
+		//--- if necessary, add the cd command
+		if (pProjPath != null && pProjPath != ""){
 			bashScript.append("cd " + pProjPath);
 			bashScript.append(this.lineBreak);
 			bashScript.append(this.lineBreak);
@@ -1171,9 +1175,102 @@ public class AppUtils implements IAppUtils {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
+	 * Create a new bash script file (generic)
+	 * 
+	 * @param	pScriptPath			the script path
+	 * @param	pCmd				the command to run
+	 * @return						the bash script file name
+	 */
+	public String newGenericBashScript(String pScriptPath, String pCmd){
+		
+		//local attributes
+		String 			fileDir			= null;
+		File			bashFile		= null;
+		PrintWriter		bashWriter		= null;
+		StringBuffer	bashScript		= null;
+		String			fullFileName	= null;
+		
+		//use the specified script dir 
+		if (pScriptPath != null && pScriptPath != ""){
+			fileDir							= pScriptPath;
+		} else {
+			fileDir							= this.userHome;
+		}
+				
+		//create the new bash script file
+		bashFile		 				= new File(fileDir, "gen_script_file.sh");		
+		
+		//load the full file name
+		fullFileName					= bashFile.getAbsolutePath();
+		
+		//if there is no file, try to create it
+		if (!bashFile.exists()){
+			try {
+				bashFile.createNewFile();
+			} catch(IOException e) {
+				//cannot create the file
+				this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (exists)");
+				//abort
+				return(fullFileName);
+			}
+		}
+		
+		//verify that it can write the file
+		if (!bashFile.canWrite()){
+			//cannot write the file
+			this.sysUtils.printlnErr("Unable to write the bash script file", this.className + ", newBashScript (canWrite)");
+			//abort
+			return(fullFileName);
+		}
+		
+		//associate the PrintWriter to the log file
+		try {
+			bashWriter				= new PrintWriter(new FileWriter(bashFile.getPath()));
+		} catch(IOException e) {
+			//cannot associate the PrintWriter to the file
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (printWriter failed)");
+		}
+		
+		//start the buffer
+		bashScript					= new StringBuffer("");
+		//--- add the bash header
+		bashScript.append("#!/bin/bash");
+		bashScript.append(this.lineBreak);		
+		bashScript.append(this.lineBreak);
+		//--- if necessary, add the cd command
+		if (pScriptPath != null && pScriptPath != ""){
+			bashScript.append("cd " + pScriptPath);
+			bashScript.append(this.lineBreak);
+			bashScript.append(this.lineBreak);
+		} else {
+			bashScript.append("cd " + this.userHome);
+			bashScript.append(this.lineBreak);
+			bashScript.append(this.lineBreak);
+		}
+		//--- add the command
+		bashScript.append(pCmd);
+		bashScript.append(this.lineBreak);		
+		
+		if (bashWriter != null){
+			//write the file
+			bashWriter.write(bashScript.toString());
+			bashWriter.flush();
+			
+			//close the writer
+			bashWriter.close();
+		}
+			
+		//return the file name
+		return(fullFileName);
+		
+	} // End newGenericBashScript
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
 	 * Delete the bash script file pFileName
 	 */
-	private boolean deleteBashScript(String pFileName){
+	public boolean deleteBashScript(String pFileName){
 		
 		//local attributes
 		boolean		status			= false;

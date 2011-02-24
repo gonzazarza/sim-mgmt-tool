@@ -1,7 +1,7 @@
 package m2gui;
 
 //swing classes
-import javax.swing.JFrame; 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 //awt classes
 import java.awt.event.WindowAdapter;
