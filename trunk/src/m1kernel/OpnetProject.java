@@ -8,8 +8,9 @@ import java.util.Set;
 import java.util.Vector;
 //drmaa
 import org.ggf.drmaa.DrmaaException;
-import org.ggf.drmaa.Session;
 import org.ggf.drmaa.SessionFactory;
+import org.ggf.drmaa.Session;
+import org.ggf.drmaa.JobTemplate;
 //exceptions
 import m1kernel.exceptions.OpnetExceptionClass;
 import m1kernel.exceptions.OpnetHeavyException;
@@ -1015,6 +1016,18 @@ public class OpnetProject implements IOpnetProject {
 		try{
 			
 			session.init("");
+			
+			JobTemplate jt = session.createJobTemplate();
+			jt.setRemoteCommand("sleeper.sh");
+			jt.setArgs(new String[]{"5"});
+						
+			String id = session.runJob(jt);
+			
+			System.out.println("Your job has been submitted with id " + id);
+			
+			session.deleteJobTemplate(jt);
+
+			
 			session.exit();
 			
 		} catch (DrmaaException e){

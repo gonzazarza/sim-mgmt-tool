@@ -1514,6 +1514,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			success						= this.opProject.submitSimJobs();
 			
+			opStatus					= true;
+			
 		} catch (OpnetHeavyException e) {
 			//show the error message
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");

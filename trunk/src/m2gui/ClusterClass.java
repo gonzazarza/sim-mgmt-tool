@@ -23,8 +23,8 @@ public abstract class ClusterClass {
 	static final int		PROP_LOAD_PRJ		= 0;							//load proj app property
 	static final int		PROP_LOAD_EF		= 1;							//load ef files app property
 	static final int		PROP_RUN_MKSIM		= 2;							//run op_mksim app property
-	static final int		PROP_SUBMIT_SIM		= 4;							//submit sim app property
-	static final int		PROP_CHECK_QUEUE	= 5; 							//check queue app property
+	static final int		PROP_SUBMIT_SIM		= 3;							//submit sim app property
+	static final int		PROP_CHECK_QUEUE	= 4; 							//check queue app property
 	//files grid column ids
 	static final int		TF_COL_FILE_NAME	= 0;							//file table column file name id
 	static final int		TF_COL_INCLUDE		= 1;							//file table column include id
@@ -37,7 +37,7 @@ public abstract class ClusterClass {
 	static final int		STEP_1_LOAD_PRJ		= 0;							//step 1: load prj file
 	static final int		STEP_2_LOAD_EF		= 1;							//step 2: load ef file list
 	static final int		STEP_3_RUN_MKSIM	= 2;							//step 3: run op_mksim command
-	static final int		STEP_5_SUBMIT_SIM	= 4;							//step 5: submit simulation to queue
+	static final int		STEP_5_SUBMIT_SIM	= 3;							//step 5: submit simulation to queue
 	//tabbed pane titles
 	static final String		TAB_1_PRJ			= "OPNET Project";				//tab 1: opnet project
 	static final String		TAB_2_EF			= "File list (*.ef)";			//tab 2: ef file list
