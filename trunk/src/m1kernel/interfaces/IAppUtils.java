@@ -214,7 +214,7 @@ public interface IAppUtils {
 	 * @param	pCmd				the command to run
 	 * @return						the bash script file name
 	 */
-	public String newGenericBashScript(String pScriptPath, String pCmd);
+	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd);
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	

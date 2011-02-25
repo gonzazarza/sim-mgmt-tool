@@ -233,14 +233,14 @@ public interface IOpnetProject {
 Submit the corresponding jobs to the queue
 	 * 
 	 * 
-	 * @return								operation status
+	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
 	 *  									in case of an IllegalArgumentException
 	 *  									in case of an OutOfMemory Error
 	 *  
 	 */
-	public boolean submitSimJobs() throws OpnetHeavyException ;
+	public Vector<String> submitSimJobs() throws OpnetHeavyException;
 	
 	
 	/*	

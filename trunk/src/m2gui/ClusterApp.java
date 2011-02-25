@@ -1506,14 +1506,23 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private void startPhase5(){
 		
 		//local attributes
-		boolean 	opStatus			= false;
-		boolean		success				= false;
+		Vector<String>		jobsInfo	= null;
+		Iterator<String>	it			= null;
+		boolean 			opStatus	= false;
 		
-		//TODO
 		try {
 			
-			success						= this.opProject.submitSimJobs();
+			jobsInfo					= this.opProject.submitSimJobs();
 			
+			//write the output
+			if (jobsInfo != null){						
+				it						= jobsInfo.iterator();				
+				while (it.hasNext()){					
+					this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, true);					
+				}				
+			}		
+		
+			//update the completion flag
 			opStatus					= true;
 			
 		} catch (OpnetHeavyException e) {

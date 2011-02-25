@@ -24,7 +24,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0224
+ * @version		2011.0225
  */
 public class AppUtils implements IAppUtils {
 
@@ -36,7 +36,8 @@ public class AppUtils implements IAppUtils {
 	private ISysUtils						sysUtils				= null;				//system utilities class
 	private String							className				= "unknown";		//to store the name of the class
 	private String 							lineBreak				= "";				//system line separator
-	private String							userHome				= "";				//user dir property	
+	private String							userHome				= "";				//user dir property
+	private String							fileSeparator			= "/";				//system file separator
 	private Vector<String>					efFileList				= null;				//list of ef files
 	private Vector<String>					badFileList				= null;				//list of not valid ef files
 	private Vector<String>					networkNames			= null;				//list of network names
@@ -75,6 +76,9 @@ public class AppUtils implements IAppUtils {
 		//get the user dir property
 		this.userHome					= System.getProperty("user.home");
 					
+		//get the system file separator
+		this.fileSeparator				= System.getProperty("file.separator");
+		
 		//initializes the file list and network names vectors
 		this.efFileList				= new Vector<String>();
 		this.networkNames			= new Vector<String>();
@@ -684,6 +688,7 @@ public class AppUtils implements IAppUtils {
 		//local attributes
 		Vector<String>	defParams		= new Vector<String>(); 
 		String			bashEOF			= new String(" \\");
+		String			okSimPath		= pSimPath;
 				
 		//------------------------------------------------------------------------------------------------------
 		//sim files
@@ -696,12 +701,18 @@ public class AppUtils implements IAppUtils {
 		 *	-ef ef_file_name.ef
 		 */		
 		 	
+		//check the path end char
+		if (!okSimPath.endsWith(this.fileSeparator)){
+			//fix the path ending
+			okSimPath					= okSimPath + this.fileSeparator;
+		}
+		
 		//--- command
-		defParams.add(pSimPath		+ pSimName	+ bashEOF);		
+		defParams.add(okSimPath		+ pSimName	+ bashEOF);		
 		//--- param: env_db
 		defParams.add("-env_db "	+ "'" + this.userHome + AppUtils.DIR_OPNET_ADMIN + AppUtils.FILE_NAME_ENV_DB + "'" + bashEOF);		
 		//--- param: opnet_dir
-		defParams.add("-opnet_dir " + AppUtils.DIR_OPNET_BINS + bashEOF);		
+		defParams.add("-opnet_dir " + AppUtils.DIR_OPNET + bashEOF);		
 		//--- param: noprompt
 		defParams.add("-noprompt " 	+ "true" + bashEOF);		
 		//--- param: ef
@@ -1181,7 +1192,7 @@ public class AppUtils implements IAppUtils {
 	 * @param	pCmd				the command to run
 	 * @return						the bash script file name
 	 */
-	public String newGenericBashScript(String pScriptPath, String pCmd){
+	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd){
 		
 		//local attributes
 		String 			fileDir			= null;
@@ -1189,6 +1200,8 @@ public class AppUtils implements IAppUtils {
 		PrintWriter		bashWriter		= null;
 		StringBuffer	bashScript		= null;
 		String			fullFileName	= null;
+		int				machine			= 0;
+		String			mLibs			= null;
 		
 		//use the specified script dir 
 		if (pScriptPath != null && pScriptPath != ""){
@@ -1231,26 +1244,61 @@ public class AppUtils implements IAppUtils {
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", newBashScript (printWriter failed)");
 		}
 		
+		//get the machine architecture type
+		machine						= this.getCorrectArchType();
+		
+		//load the corresponding path and lib dir
+		switch (machine){
+		case AppUtils.MACHINE_32_BITS:
+			//32 bits architecture
+			mLibs					= AppUtils.DIR_OPNET32_LIB;
+			break;
+		case AppUtils.MACHINE_64_BITS:
+			//64 bits architecture
+			mLibs					= AppUtils.DIR_OPNET64_LIB;
+			break;
+		case AppUtils.MACHINE_UNKNOWN:
+			//unknown architecture
+			mLibs					= AppUtils.DIR_OPNET_LIB;
+			break;
+		default:
+			//other???
+			mLibs					= AppUtils.DIR_OPNET_LIB;
+		}
+		
 		//start the buffer
 		bashScript					= new StringBuffer("");
+		
 		//--- add the bash header
 		bashScript.append("#!/bin/bash");
 		bashScript.append(this.lineBreak);		
 		bashScript.append(this.lineBreak);
+		
+		//--- add the ld lib path		
+		if (mLibs != null && mLibs != ""){
+			bashScript.append("export LD_LIBRARY_PATH=" + mLibs);
+			bashScript.append(this.lineBreak);		
+			bashScript.append(this.lineBreak);
+		}
+		
 		//--- if necessary, add the cd command
 		if (pScriptPath != null && pScriptPath != ""){
 			bashScript.append("cd " + pScriptPath);
 			bashScript.append(this.lineBreak);
 			bashScript.append(this.lineBreak);
-		} else {
-			bashScript.append("cd " + this.userHome);
-			bashScript.append(this.lineBreak);
-			bashScript.append(this.lineBreak);
 		}
-		//--- add the command
-		bashScript.append(pCmd);
-		bashScript.append(this.lineBreak);		
 		
+		//--- add the command
+		if (pCmd != null){
+			Iterator<String> 	it	= pCmd.iterator();
+			while (it.hasNext()){
+			
+				bashScript.append(it.next());
+				bashScript.append(this.lineBreak);	
+			}			
+		}
+		
+		//write all this
 		if (bashWriter != null){
 			//write the file
 			bashWriter.write(bashScript.toString());

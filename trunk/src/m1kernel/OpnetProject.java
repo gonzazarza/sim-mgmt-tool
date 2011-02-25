@@ -1003,51 +1003,94 @@ public class OpnetProject implements IOpnetProject {
 	 * Submit the corresponding jobs to the queue
 	 * 
 	 * 
-	 * @return								operation status
+	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
 	 *  									in case of an IllegalArgumentException
 	 *  									in case of an OutOfMemory Error 
 	 */
-	public boolean submitSimJobs() throws OpnetHeavyException {
+	public Vector<String> submitSimJobs() throws OpnetHeavyException {
 		
-		boolean				status		= false;
-		SessionFactory		factory		= SessionFactory.getFactory();
-		Session				session		= factory.getSession();
-		JobTemplate 		jt			= null; 
-		String 				id			= "NO-ID";
+		//check the previous operation status
+		if (!this.isRunMKSIMDone) {
+			throw new OpnetHeavyException("Unable to get the compiled sim job names: op_mksim command not applied");
+		}
 		
-		//TODO: the code below should be called for each job to be sent
+		if (!this.isSimSetupDone) {
+			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
+		}
 		
+		//general attributes 
+		Set<String>					compSimNames	= null;	
+		Iterator<String>			itOuter			= null;
+		Iterator<String>			itInner			= null;
+		HashMap<String,OpnetJob>	itemOuter		= null;
+		String						netName			= "";
+		String						fileName		= "";
+		OpnetJob					item			= null;
+		boolean						compiled		= false;
+		boolean						included		= false;
+		//drmaa attributes
+		Vector<String>				jobsInfo		= new Vector<String>();
+		SessionFactory				factory			= SessionFactory.getFactory();
+		Session						session			= factory.getSession();
+		JobTemplate 				jt				= null; 
+		String 						id				= "NO-ID";
+		String						script_name		= "NO-NAME";
+			
 		try{
 			
-			//initialize the DRMAA session
-			session.init(null);
-			//init the job template
-			jt							= session.createJobTemplate();
+			//get the set of compiled networks
+			compSimNames							= new HashSet<String>();
+			itOuter									= this.networksMap.keySet().iterator();
+			
+			//check the network compiled status
+			while (itOuter.hasNext()){
 				
-			jt.setJobName("sh2");
-		
-//			jt.setWorkingDirectory(java.lang.System.getProperty("user.dir"));
-//			jt.setRemoteCommand("/bin/ls");
-//			jt.setArgs(new String[] {"-l","-a"});
+				//get the net name
+				netName								= itOuter.next();
+				//get the net hash map
+				itemOuter							= this.networksMap.get(netName);
+				//get the inner iterator
+				itInner								= itemOuter.keySet().iterator();
+				
+				//check the status of the entire file names map for each list
+				while (itInner.hasNext()){
+					//get the file name
+					fileName						= itInner.next();
+					item							= this.networksMap.get(netName).get(fileName);
+					compiled						= item.isEfFileMKSIMCompiled();
+					included						= item.isEfFileIncluded();
+
+					//ok, submit the job
+					if (included && compiled){
 						
-			String file_name = this.appUtils.newGenericBashScript(null, "echo HOLA_GONZA >> $HOME/hello_nurse.txt");
-			jt.setRemoteCommand("sh");
-			jt.setArgs(new String[] {file_name});
-			
-			id = session.runJob(jt);
-			
-			System.out.println("Job successfully submitted ID: " + id);
-							
-			//TODO: put this with the job name and id to the output... don't know how
-			System.out.println("Your job has been submitted with id " + id);
-//			System.out.println("File name: " + file_name);			
-			
-			//destroy the job template
-			session.deleteJobTemplate(jt);
-			//finalize the DRMAA session (it does not affect the jobs)
-			session.exit();
+						//initialize the DRMAA session
+						session.init(null);
+						//init the job template
+						jt							= session.createJobTemplate();
+						
+						jt.setJobName(fileName);
+								
+						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode());
+										
+						jt.setRemoteCommand("sh");
+						jt.setArgs(new String[] {script_name});
+						
+						id = session.runJob(jt);
+						
+						//TODO: don't forget to delete the script file!!!!
+																		
+						//destroy the job template
+						session.deleteJobTemplate(jt);
+						//finalize the DRMAA session (it does not affect the jobs)
+						session.exit();
+						
+					} //end if included and compiled
+					
+				} //end inner while
+				
+			} // end outer while
 			
 		} catch (OutOfMemoryError e){
 			throw new OpnetHeavyException("OutOfMemory Error: " + e.getMessage());
@@ -1059,10 +1102,10 @@ public class OpnetProject implements IOpnetProject {
 			throw new OpnetHeavyException("Illegal Argument Exception: " + e.getMessage());
 		} 
 		
-		//return the operation status
-		return(status);
+		//return the operations status
+		return(jobsInfo);
 		
-	} // End boolean submitSimJobs
+	} // End Vector<String> submitSimJobs
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* PRIVATE METHODS																								*/
