@@ -48,9 +48,7 @@ public class OpnetProject implements IOpnetProject {
 	private boolean										isRunMKSIMDone		= false;			//op_mksim run flag
 	private boolean										isSimHelpLoaded		= false;			//sim file help load flag
 	private boolean										isSimSetupDone		= false;			//sims setup flag
-	private boolean										isSimSubmitDone		= false;			//sims submit flag
-	private boolean										isQueueRunning		= false;			//queue checks run flag
-	
+	private boolean										isSimSubmitDone		= false;			//sims submit flag	
 	
 	/*	
 	================================================================================================================== 
@@ -1020,8 +1018,10 @@ public class OpnetProject implements IOpnetProject {
 			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
 		}
 		
-		//general attributes 
-		Set<String>					compSimNames	= null;	
+		//clear flag
+		this.isSimSubmitDone						= false;
+		
+		//general attributes 	
 		Iterator<String>			itOuter			= null;
 		Iterator<String>			itInner			= null;
 		HashMap<String,OpnetJob>	itemOuter		= null;
@@ -1041,7 +1041,6 @@ public class OpnetProject implements IOpnetProject {
 		try{
 			
 			//get the set of compiled networks
-			compSimNames							= new HashSet<String>();
 			itOuter									= this.networksMap.keySet().iterator();
 			
 			//check the network compiled status
@@ -1079,8 +1078,9 @@ public class OpnetProject implements IOpnetProject {
 						
 						id = session.runJob(jt);
 						
-						//TODO: don't forget to delete the script file!!!!
-																		
+						//save the job name
+						jobsInfo.add("Job " + id + " (" + fileName + ") submited succesfully");			
+						
 						//destroy the job template
 						session.deleteJobTemplate(jt);
 						//finalize the DRMAA session (it does not affect the jobs)
@@ -1101,6 +1101,9 @@ public class OpnetProject implements IOpnetProject {
 		} catch (IllegalArgumentException e){
 			throw new OpnetHeavyException("Illegal Argument Exception: " + e.getMessage());
 		} 
+		
+		//update completion flag
+		this.isSimSubmitDone						= true;
 		
 		//return the operations status
 		return(jobsInfo);

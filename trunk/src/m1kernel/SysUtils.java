@@ -36,7 +36,7 @@ public class SysUtils implements ISysUtils {
 	private SimpleDateFormat	dateFormat				= null;							//date format (output)
 	private String				machineName				= "unknown";					//local machine name
 	// logic checks
-	private boolean				console_output			= true;							//console output flag
+	private boolean				console_output			= false;						//console output flag
 	private boolean				log_output				= true;							//log file output flag
 	private String				log_file_dir			= ""; 							//log file path
 	private boolean 			log_file_classdir		= false;						//log file execution path flag
