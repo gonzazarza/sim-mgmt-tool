@@ -1009,17 +1009,17 @@ public class OpnetProject implements IOpnetProject {
 	 */
 	public Vector<String> submitSimJobs() throws OpnetHeavyException {
 		
-		//check the previous operation status
-		if (!this.isRunMKSIMDone) {
-			throw new OpnetHeavyException("Unable to get the compiled sim job names: op_mksim command not applied");
-		}
-		
-		if (!this.isSimSetupDone) {
-			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
-		}
-		
-		//clear flag
-		this.isSimSubmitDone						= false;
+//		//check the previous operation status
+//		if (!this.isRunMKSIMDone) {
+//			throw new OpnetHeavyException("Unable to get the compiled sim job names: op_mksim command not applied");
+//		}
+//		
+//		if (!this.isSimSetupDone) {
+//			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
+//		}
+//		
+//		//clear flag
+//		this.isSimSubmitDone						= false;
 		
 		//general attributes 	
 		Iterator<String>			itOuter			= null;
@@ -1052,7 +1052,7 @@ public class OpnetProject implements IOpnetProject {
 				itemOuter							= this.networksMap.get(netName);
 				//get the inner iterator
 				itInner								= itemOuter.keySet().iterator();
-				
+			
 				//check the status of the entire file names map for each list
 				while (itInner.hasNext()){
 					//get the file name
@@ -1070,9 +1070,12 @@ public class OpnetProject implements IOpnetProject {
 						jt							= session.createJobTemplate();
 						
 						jt.setJobName(fileName);
-								
 						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode());
-										
+								
+						jt.setNativeSpecification("-l opnet_licenses=1");
+//						jt.setNativeSpecification("-q test.q");
+//						jt.setNativeSpecification("-p -200");
+						
 						jt.setRemoteCommand("sh");
 						jt.setArgs(new String[] {script_name});
 						
