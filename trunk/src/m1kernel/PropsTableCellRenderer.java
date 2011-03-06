@@ -15,7 +15,7 @@ import m1kernel.interfaces.ISysUtils;
  * Modified table cell renderer class for the properties table (to modify cell color and fonts)
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1022
+ * @version		2011.0306
  */
 public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 
@@ -77,7 +77,7 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 			//set horizontal alignment
 			this.setHorizontalAlignment(SwingConstants.LEFT);			
 			//cell color
-			cell.setBackground(new Color(211, 211, 211));
+			cell.setBackground(AppUtils.COLOR_NOT_APPLIED);
 			//font color
 			cell.setForeground(Color.BLACK);
 			//font style

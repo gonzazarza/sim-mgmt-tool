@@ -10,7 +10,7 @@ import m1kernel.ConsoleJob;
  * Interface to access to the application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0224
+ * @version		2011.0306
  */
 public interface IAppUtils {
 
@@ -32,13 +32,15 @@ public interface IAppUtils {
 
 	//--- colors used in the application
 	/** color:  not applied */
-	static final Color		COLOR_NOT_APPLIED	= new Color(211, 211, 211);						
+	static final Color		COLOR_NOT_APPLIED	= new Color(192, 192, 192);						
 	/** color:  done */
 	static final Color		COLOR_DONE			= new Color(034, 139, 034);						
 	/** color:  fail */
 	static final Color		COLOR_FAIL			= new Color(178, 034, 034);						
 	/** color:  running */
-	static final Color		COLOR_RUNNING		= new Color(070, 130, 180);						
+	static final Color		COLOR_RUNNING		= new Color(070, 130, 180);
+	/** color: 	components */
+	static final Color		COLOR_COMPONENTS	= new Color(211, 211, 211);
 	
 	//--- arch type identifiers
 	/** arch type: unknown */

@@ -25,6 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 //util classes
 import java.util.Iterator;
 import java.util.Set;
@@ -60,7 +61,7 @@ import m1kernel.interfaces.ISysUtils;
  * Main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1119
+ * @version		2011.0306
  */
 public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener, DocumentListener {
  
@@ -85,13 +86,21 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bBrowse					= null;							//browse button
 	private JButton						bRunMKSIM				= null;							//run op_mksim command
 	private JButton						bSubmitSims				= null;							//submit sim to queue
-	private JButton						bAppOutputSave			= null;							//app info save button
 	private JButton						bAppOutputClear			= null;							//app info output clear button
 	private JFileChooser				dFileChooser			= null;							//load file dialog
 	private JTextArea					txAppOutput				= null;							//app info output
-	private String[][]					statusData				= null;							//app status data container
-	private JTable						statusTable				= null;							//grid for the system props
-	private PropsTableModel				statusModel				= null;							//default table model
+	private String[][]					s1StatusData			= null;							//step 1 app status data container
+	private JTable						s1StatusTable			= null;							//step 1 grid for the system props
+	private PropsTableModel				s1StatusModel			= null;							//step 1 default table model
+	private String[][]					s2StatusData			= null;							//step 2 app status data container
+	private JTable						s2StatusTable			= null;							//step 2 grid for the system props
+	private PropsTableModel				s2StatusModel			= null;							//step 2 default table model
+	private String[][]					s3StatusData			= null;							//step 3 app status data container
+	private JTable						s3StatusTable			= null;							//step 3 grid for the system props
+	private PropsTableModel				s3StatusModel			= null;							//step 3 default table model
+	private JTextField					tfSimLicNumber			= null;							//opnet licenses number field
+	private JTextField					tfSimPriority			= null;							//simulation priority value field
+	private JTextField					tfSimQueue				= null;							//simulation queue name field
 	//--- panel: load ef files
 	private JPanel						pFileList				= null;							//ef file list panel
 	private JCheckBox					ckSelectAll				= null;							//select all checkbox
@@ -121,9 +130,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JTextArea					txDTSIMHelp				= null;							//sim file help
 	private final String				simsListHeader			= " * Select the sim job *";	//sim files cb header
 	private final String				sismListEmpty			= " * No sim job selected *";	//sim files cb empty item
-	//--- panel: queue status
-	private JPanel						pQueue					= null;							//queue status panel
-	private JTextArea					txQueueStatus			= null;							//queue status info
 	//--- panel: help
 	private JPanel						pHelp					= null;							//help panel
 	
@@ -172,7 +178,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.machineName			= this.sysUtils.getMachineName();		
 		
 		//save the title
-		this.appTitle				= "Cluster GUI for OPNET 14.0.A - " + this.userName + "@" + this.machineName;  
+		this.appTitle				= "Cluster GUI for OPNET Modeler - " + this.userName + "@" + this.machineName;  
 		
 		//initialize main jpanel
 		this.mainPanel				= new JPanel();		
@@ -219,13 +225,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.setPanelDTSim();
 		this.tabbedPane.add(ClusterApp.TAB_4_SIM, 	this.pDTSIM);				// TO BE FINISHED!
 				
-		//add queue status panel
-		this.setPanelQueue();
-		this.tabbedPane.add(ClusterApp.TAB_5_QUEUE,	this.pQueue);				// TO BE DEFINED!
-		
 		//add about/help panel
 		this.setPanelHelp();
-		this.tabbedPane.add(ClusterApp.TAB_6_ABOUT,	this.pHelp);				//TO BE DEFINED!
+		this.tabbedPane.add(ClusterApp.TAB_5_ABOUT,	this.pHelp);				//TO BE DEFINED!
 		
 	} // End void setTabbedPane
 	
@@ -238,7 +240,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	private void setPanelProject(){		
 		
-		// look and feel info
+		// look and feel info (DEPRECATED!)
 		// * 1st-level panels:
 		//		* borders:		empty, 5, 5, 5, 5
 		//		* layout:		not-defined
@@ -257,196 +259,244 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.pProject.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		
 		//-----------------------------------------------------------------------------------------------
-		//set panel: info
+		//set panel: step 1, select project file
 		//-----------------------------------------------------------------------------------------------
-		JPanel				ppInfo			= new JPanel();
-		GridBagConstraints	cpInfo			= new GridBagConstraints();
+		JPanel				ppStep1			= new JPanel();
+		GridBagConstraints	cpStep1			= new GridBagConstraints();
 		//--- set border and layout
-		ppInfo.setLayout(new BoxLayout(ppInfo, BoxLayout.Y_AXIS));
-		ppInfo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));		
+		ppStep1.setLayout(new BoxLayout(ppStep1, BoxLayout.Y_AXIS));
+		ppStep1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));		
 		//--- set position
-		cpInfo.gridx						= 0;
-		cpInfo.gridy						= 0;
-		cpInfo.gridwidth					= 1;
-		cpInfo.gridheight					= 2;
-		this.pProject.add(ppInfo, cpInfo);
+		cpStep1.gridx						= 0;
+		cpStep1.gridy						= 0;
+		cpStep1.gridwidth					= 1;
+		cpStep1.gridheight					= 1;
+		cpStep1.fill						= GridBagConstraints.HORIZONTAL;
+		this.pProject.add(ppStep1, cpStep1);
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppInfo.add(this.setPanelExtra(" App Commands"));
-		ppInfo.add(Box.createVerticalStrut(10));
+		ppStep1.add(this.setPanelExtra(" Step 1:  Select project file"));
 		//-----------------------------------------------------------------------------------------------		
-		//--- set row 1: step 1, select project file
-		//-----------------------------------------------------------------------------------------------		
-		JPanel				ppiRow1			= new JPanel();	
-		JLabel				lSelect			= new JLabel("Select project file");
-		this.bBrowse						= new JButton("Browse");
+		//--- set row 1: components and status
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp1Row1			= new JPanel();	
+		this.bBrowse						= new JButton("Browse directories");
 		this.dFileChooser					= new JFileChooser();
 		this.dFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		this.dFileChooser.setFileFilter(new FileNameExtensionFilter("Opnet project file (*.prj)","prj"));
 		this.dFileChooser.setMultiSelectionEnabled(false);
 		this.bBrowse.addActionListener(this);	
 		//------ set border and layout
-		ppiRow1.setLayout(new BoxLayout(ppiRow1, BoxLayout.X_AXIS));
-		ppiRow1.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createTitledBorder(null, "Step 1"), 
-				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		pp1Row1.setLayout(new BoxLayout(pp1Row1, BoxLayout.X_AXIS));
+		pp1Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+		//--- set background color
+		pp1Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
-		ppiRow1.add(lSelect);
-		ppiRow1.add(Box.createHorizontalGlue());
-		ppiRow1.add(this.bBrowse);		
-		//------ add panel
-		ppInfo.add(ppiRow1);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: step 2, run op_mksim
-		//-----------------------------------------------------------------------------------------------
-		JPanel				ppiRow2			= new JPanel();
-		JLabel				lRunMKSIM		= new JLabel("Run command op_mksim");
-		this.bRunMKSIM						= new JButton("Run");
-		//------ set border and layout
-		ppiRow2.setLayout(new BoxLayout(ppiRow2, BoxLayout.X_AXIS));
-		ppiRow2.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createTitledBorder(null, "Step 2"), 
-				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		//------ add listeners
-		this.bRunMKSIM.addActionListener(this);
-		//------ add components
-		ppiRow2.add(lRunMKSIM);
-		ppiRow2.add(Box.createHorizontalGlue());
-		ppiRow2.add(this.bRunMKSIM);
-		//------ add panel
-		ppInfo.add(ppiRow2);		
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 4: step 4, submit simulations to queue
-		//-----------------------------------------------------------------------------------------------
-		JPanel				ppiRow4			= new JPanel();
-		JLabel				lSubmitSim		= new JLabel("Submit simulation jobs");
-		this.bSubmitSims					= new JButton("Submit");
-		//------ set border and layout
-		ppiRow4.setLayout(new BoxLayout(ppiRow4, BoxLayout.X_AXIS));
-		ppiRow4.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createTitledBorder(null, "Step 4"), 
-				BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		//------ add listeners
-		this.bSubmitSims.addActionListener(this);
-		//------ add components
-		ppiRow4.add(lSubmitSim);
-		ppiRow4.add(Box.createHorizontalGlue());
-		ppiRow4.add(this.bSubmitSims);
-		//------ add panel
-		ppInfo.add(ppiRow4);
-		//-----------------------------------------------------------------------------------------------
-		//--- set bottom glue
-		//-----------------------------------------------------------------------------------------------
-		ppInfo.add(Box.createVerticalGlue());
-		
-		//-----------------------------------------------------------------------------------------------
-		//set panel: status
-		//-----------------------------------------------------------------------------------------------		
-		JPanel				ppStatus		= new JPanel();
-		GridBagConstraints	cpStatus		= new GridBagConstraints();
-		//--- set border and layout 
-		ppStatus.setLayout(new BoxLayout(ppStatus, BoxLayout.Y_AXIS));
-		ppStatus.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- set position
-		cpStatus.gridx						= 1;
-		cpStatus.gridy						= 0;
-		cpStatus.gridwidth					= 1;
-		cpStatus.gridheight					= 1;
-		cpStatus.fill						= GridBagConstraints.VERTICAL;
-		this.pProject.add(ppStatus, cpStatus);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		ppStatus.add(this.setPanelExtra(" App status"));
-		ppStatus.add(Box.createVerticalStrut(10));		
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: status objects
-		//-----------------------------------------------------------------------------------------------
-		JPanel				ppsRow1			= new JPanel();
-		//------ set border and layout
-		ppsRow1.setLayout(new BoxLayout(ppsRow1, BoxLayout.X_AXIS));
-		ppsRow1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//------ set status data		
-		this.statusData						= new String[4][2];
+		pp1Row1.add(this.bBrowse);		
+		pp1Row1.add(Box.createHorizontalStrut(30));
+		pp1Row1.add(Box.createHorizontalGlue());
+		//------ set status data	
+		this.s1StatusData					= new String[2][2];
 		//------ 0
-		this.statusData[0][0]				= new String(ClusterApp.LABEL_LOAD_PRJ);	
-		this.statusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
+		this.s1StatusData[0][0]				= new String(ClusterApp.LABEL_LOAD_PRJ);	
+		this.s1StatusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 1
-		this.statusData[1][0]				= new String(ClusterApp.LABEL_LOAD_EF);
-		this.statusData[1][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
-		//------ 2
-		this.statusData[2][0]				= new String(ClusterApp.LABEL_RUN_MKSIM);	
-		this.statusData[2][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
-		//------ 3	
-		this.statusData[3][0]				= new String(ClusterApp.LABEL_SUBMIT_SIM);	
-		this.statusData[3][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
+		this.s1StatusData[1][0]				= new String(ClusterApp.LABEL_LOAD_EF);
+		this.s1StatusData[1][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ initialize status table
-		boolean status						= this.initTable(ClusterApp.TABLE_PROPS, this.statusData);
+		boolean status1						= this.initTable(ClusterApp.TABLE_PROPS_S1, this.s1StatusData);
 		//------ add status table
-		if (status == true){
-			ppsRow1.add(this.statusTable);
+		if (status1 == true){
+			pp1Row1.add(this.s1StatusTable);
 		} else {
 			//show an error message
 			JOptionPane.showMessageDialog(
 					this.mainPanel,
-					"Unable to initialize the system properties status table.",
+					"Unable to initialize the system properties status table (step 1).",
 					"App status error",
 					JOptionPane.ERROR_MESSAGE);
 		}
 		//------ add panel
-		ppStatus.add(ppsRow1);	
+		ppStep1.add(pp1Row1);	
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
-		ppStatus.add(Box.createVerticalStrut(20));	
-		//-----------------------------------------------------------------------------------------------
-		//--- set bottom glue
-		//-----------------------------------------------------------------------------------------------
-		ppStatus.add(Box.createVerticalGlue());
+		ppStep1.add(Box.createVerticalStrut(20));
 		
 		//-----------------------------------------------------------------------------------------------
-		//set panel: queue
+		//set panel: step 2, run op_mksim
 		//-----------------------------------------------------------------------------------------------
-		JPanel				ppQueue			= new JPanel();
-		GridBagConstraints	cpQueue			= new GridBagConstraints();
+		JPanel				ppStep2			= new JPanel();
+		GridBagConstraints	cpStep2			= new GridBagConstraints();
 		//--- set border and layout
-		ppQueue.setLayout(new BoxLayout(ppQueue, BoxLayout.Y_AXIS));
-		ppQueue.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		ppStep2.setLayout(new BoxLayout(ppStep2, BoxLayout.Y_AXIS));
+		ppStep2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//--- set position
-		cpQueue.gridx						= 1;
-		cpQueue.gridy						= 1;
-		cpQueue.gridwidth					= 1;
-		cpQueue.gridheight					= 1;
-		cpQueue.fill						= GridBagConstraints.VERTICAL;		
-		this.pProject.add(ppQueue, cpQueue);	
+		cpStep2.gridx						= 0;
+		cpStep2.gridy						= 1;
+		cpStep2.gridwidth					= 1;
+		cpStep2.gridheight					= 1;
+		cpStep2.fill						= GridBagConstraints.HORIZONTAL;
+		this.pProject.add(ppStep2, cpStep2);
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppQueue.add(this.setPanelExtra(" Queue status"));
-		ppQueue.add(Box.createVerticalStrut(10));
+		ppStep2.add(this.setPanelExtra(" Step 2:  Run op_mksim"));
+		//-----------------------------------------------------------------------------------------------		
+		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: queue status list (temp)
-		//-----------------------------------------------------------------------------------------------
-		JPanel				ppqRow1			= new JPanel();
+		JPanel				pp2Row1			= new JPanel();	
+		this.bRunMKSIM						= new JButton("Run command");
 		//------ set border and layout
-		ppqRow1.setLayout(new BoxLayout(ppqRow1, BoxLayout.X_AXIS));
-		ppqRow1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//------ set background color
-		ppqRow1.setBackground(new Color(211, 211, 211));
+		pp2Row1.setLayout(new BoxLayout(pp2Row1, BoxLayout.X_AXIS));
+		pp2Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+		//--- set background color
+		pp2Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
-		ppqRow1.add(Box.createRigidArea(new Dimension(200, 150)));
+		pp2Row1.add(this.bRunMKSIM);
+		pp2Row1.add(Box.createHorizontalStrut(30));
+		pp2Row1.add(Box.createHorizontalGlue());
+		//------ set status data	
+		this.s2StatusData					= new String[2][2];
+		//------ 0
+		this.s2StatusData[0][0]				= new String(ClusterApp.LABEL_RUN_MKSIM);	
+		this.s2StatusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
+		//------ 1
+		this.s2StatusData[1][0]				= new String(" ");
+		this.s2StatusData[1][1]				= new String(" ");
+		//------ initialize status table
+		boolean status2						= this.initTable(ClusterApp.TABLE_PROPS_S2, this.s2StatusData);
+		//------ add status table
+		if (status2 == true){
+			pp2Row1.add(this.s2StatusTable);
+		} else {
+			//show an error message
+			JOptionPane.showMessageDialog(
+					this.mainPanel,
+					"Unable to initialize the system properties status table (step 2).",
+					"App status error",
+					JOptionPane.ERROR_MESSAGE);
+		}
 		//------ add panel
-		ppQueue.add(ppqRow1);
+		ppStep2.add(pp2Row1);		
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
-		ppQueue.add(Box.createVerticalStrut(20));						
-		//-----------------------------------------------------------------------------------------------
-		//--- set bottom glue
-		//-----------------------------------------------------------------------------------------------
-		ppQueue.add(Box.createVerticalGlue());
+		ppStep2.add(Box.createVerticalStrut(20));
 		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set panel: step 3, submit simulations to queue
+		//-----------------------------------------------------------------------------------------------
+		JPanel				ppStep3			= new JPanel();
+		GridBagConstraints	cpStep3			= new GridBagConstraints();
+		//--- set border and layout
+		ppStep3.setLayout(new BoxLayout(ppStep3, BoxLayout.Y_AXIS));
+		ppStep3.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));		
+		//--- set position
+		cpStep3.gridx						= 0;
+		cpStep3.gridy						= 2;
+		cpStep3.gridwidth					= 1;
+		cpStep3.gridheight					= 1;
+		cpStep3.fill						= GridBagConstraints.HORIZONTAL;
+		this.pProject.add(ppStep3, cpStep3);
+		//-----------------------------------------------------------------------------------------------
+		//--- set row 0: title and space
+		//-----------------------------------------------------------------------------------------------
+		ppStep3.add(this.setPanelExtra(" Step 3:  Submit jobs"));
+		//-----------------------------------------------------------------------------------------------		
+		//--- set row 2: components and status
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp3Row2			= new JPanel();	
+		this.bSubmitSims					= new JButton("Submit simulations");
+		//------ set border and layout
+		pp3Row2.setLayout(new BoxLayout(pp3Row2, BoxLayout.X_AXIS));
+		pp3Row2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+		//--- set background color
+		pp3Row2.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ add components
+		pp3Row2.add(this.bSubmitSims);		
+		pp3Row2.add(Box.createHorizontalStrut(30));
+		pp3Row2.add(Box.createHorizontalGlue());
+		//------ set status data	
+		this.s3StatusData					= new String[2][2];
+		//------ 0
+		this.s3StatusData[0][0]				= new String(ClusterApp.LABEL_SUBMIT_SIM);	
+		this.s3StatusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
+		//------ 1
+		this.s3StatusData[1][0]				= new String(ClusterApp.LABEL_QSTAT);
+		this.s3StatusData[1][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
+		//------ initialize status table
+		boolean status3						= this.initTable(ClusterApp.TABLE_PROPS_S3, this.s3StatusData);
+		//------ add status table
+		if (status3 == true){
+			pp3Row2.add(this.s3StatusTable);
+		} else {
+			//show an error message
+			JOptionPane.showMessageDialog(
+					this.mainPanel,
+					"Unable to initialize the system properties status table (step 3).",
+					"App status error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+		//------ add panel
+		ppStep3.add(pp3Row2);	
+		//-----------------------------------------------------------------------------------------------
+		//--- set row 1: submit options list
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp3Row1			= new JPanel();
+		JLabel				lSimQueue		= new JLabel("Queue:");
+		JLabel				lSimLicNumber	= new JLabel("Licences:");
+		JLabel				lSimPriority	= new JLabel("Priority:");
+		this.tfSimQueue						= new JTextField("cluster.q", 	5);
+		this.tfSimPriority					= new JTextField("0", 			5);
+		this.tfSimLicNumber					= new JTextField("1", 			5);
+		//------ configure components
+		//--------- queue 
+		this.tfSimQueue.setEnabled(true);
+		this.tfSimQueue.setEditable(false);
+		this.tfSimQueue.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimQueue.setFont(new Font(this.tfSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- licenses number
+		this.tfSimLicNumber.setEnabled(true);
+		this.tfSimLicNumber.setEditable(false);
+		this.tfSimLicNumber.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimLicNumber.setFont(new Font(this.tfSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- job priority
+		this.tfSimPriority.setEnabled(true);
+		this.tfSimPriority.setEditable(true);
+		this.tfSimPriority.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimPriority.setFont(new Font(this.tfSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- labels
+		lSimQueue.setFont(new Font(lSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+		//------ set border and layout
+		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
+		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//------ set background color
+		pp3Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ add components
+		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+		pp3Row1.add(lSimQueue);
+		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+		pp3Row1.add(this.tfSimQueue);
+		pp3Row1.add(Box.createRigidArea(new Dimension(30, 0)));
+		pp3Row1.add(lSimLicNumber);
+		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+		pp3Row1.add(this.tfSimLicNumber);
+		pp3Row1.add(Box.createRigidArea(new Dimension(30, 0)));
+		pp3Row1.add(lSimPriority);
+		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+		pp3Row1.add(this.tfSimPriority);
+		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+		//------ add panel
+		ppStep3.add(pp3Row1);
+		//-----------------------------------------------------------------------------------------------
+		//--- set bottom space
+		//-----------------------------------------------------------------------------------------------
+		ppStep3.add(Box.createVerticalStrut(20));						
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: output
@@ -458,8 +508,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppOutput.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//--- set position
 		cpOutput.gridx						= 0;
-		cpOutput.gridy						= 2;
-		cpOutput.gridwidth					= 2;
+		cpOutput.gridy						= 5;
+		cpOutput.gridwidth					= 1;
 		cpOutput.gridheight					= 1;
 		cpOutput.fill						= GridBagConstraints.HORIZONTAL;		
 		this.pProject.add(ppOutput, cpOutput);	
@@ -467,13 +517,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
 		ppOutput.add(this.setPanelExtra(" App output"));
-		ppOutput.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: output text area
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow1			= new JPanel();
 		String				userPrompt		= " No output";
-		this.txAppOutput					= new JTextArea(userPrompt, 20, 60);
+		this.txAppOutput					= new JTextArea(userPrompt, 20, 65);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
@@ -486,7 +535,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 2: output buttons
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow2			= new JPanel();
-		this.bAppOutputSave					= new JButton("Save to file");
 		this.bAppOutputClear				= new JButton("Clear output");
 		//------ add listeners
 		this.bAppOutputClear.addActionListener(this);
@@ -495,8 +543,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppoRow2.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ add components
 		ppoRow2.add(Box.createHorizontalGlue());
-		ppoRow2.add(this.bAppOutputSave);
-		ppoRow2.add(Box.createHorizontalStrut(5));
 		ppoRow2.add(this.bAppOutputClear);
 		//------ add panel
 		ppOutput.add(ppoRow2);
@@ -915,70 +961,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		psHelp.add(Box.createVerticalGlue());
 		
 	} //End void setDT_SIMPanel
-	
-	/* ------------------------------------------------------------------------------------------------------------ */
-	
-	/** 
-	 * Set the jobs queue panel 
-	 */
-	private void setPanelQueue(){
-				
-		// look and feel info
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5 
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-
 		
-		//initialize panel
-		this.pQueue						= new JPanel();
-		
-		//set border and layout
-		this.pQueue.setLayout(new BoxLayout(this.pQueue, BoxLayout.Y_AXIS));
-		this.pQueue.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		
-		//-----------------------------------------------------------------------------------------------
-		//set panel: jobs list
-		//-----------------------------------------------------------------------------------------------
-		JPanel			pjList				= new JPanel();
-		//--- set border and layout
-		pjList.setLayout(new BoxLayout(pjList, BoxLayout.Y_AXIS));
-		pjList.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- add panel
-		this.pQueue.add(pjList);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		pjList.add(this.setPanelExtra(" Jobs queue status"));
-		pjList.add(Box.createVerticalStrut(10));
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: job list
-		//-----------------------------------------------------------------------------------------------
-		JPanel			pjlRow1				= new JPanel();
-		//------ set border and layout
-		pjlRow1.setLayout(new BoxLayout(pjlRow1, BoxLayout.X_AXIS));
-		pjlRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-		//------ create components
-		this.txQueueStatus					= new JTextArea("", 30, 60);
-		JScrollPane		queueScroll			= new JScrollPane(this.txQueueStatus);
-		this.txQueueStatus.setEditable(false);
-		this.txQueueStatus.setLineWrap(true);
-		//------ add components
-		pjlRow1.add(queueScroll);
-		//------ add panel
-		pjList.add(pjlRow1);		
-		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
-		//-----------------------------------------------------------------------------------------------
-		pjList.add(Box.createVerticalGlue());
-		
-	} // End setPanelQueue
-	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
@@ -1070,7 +1053,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * --- rely on: 	phase 2
 		 * --- triggers: 	none
 		 *  
-		 * phase 5: submit simulations to queue
+		 * phase 4: submit simulations to queue
 		 * --- init: 		button submit
 		 * --- rely on: 	phase 3
 		 * --- triggers: 	queue status listener
@@ -1102,7 +1085,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_FAIL);		
 					//show error messages
 					//--- nothing to do					
-				}			
+				}		
+				
+				//notify the properties table changes
+				this.s1StatusModel.fireTableDataChanged();
+				
 				//exit
 				break;			
 			// -----------------------------------------------------------------------------------------------
@@ -1133,6 +1120,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 							"Load error",
 							JOptionPane.ERROR_MESSAGE);					
 				}
+				
+				//notify the properties table changes
+				this.s1StatusModel.fireTableDataChanged();
+				
 				//exit
 				break;
 			// -----------------------------------------------------------------------------------------------
@@ -1166,12 +1157,16 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//show error messages
 										
 				}
+				
+				//notify the properties table changes
+				this.s2StatusModel.fireTableDataChanged();
+				
 				//exit
 				break;			
 			// -----------------------------------------------------------------------------------------------
-			// phase 5: submit simulation jobs
+			// phase 4: submit simulation jobs
 			// -----------------------------------------------------------------------------------------------				
-			case ClusterApp.STEP_5_SUBMIT_SIM:
+			case ClusterApp.STEP_4_SUBMIT_SIM:
 				if (pState == true){
 					//enable gui components
 										
@@ -1191,6 +1186,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//show error messages
 					
 				}
+				
+				//notify the properties table changes
+				this.s2StatusModel.fireTableDataChanged();
+				
 				//exit
 				break;			
 			// -----------------------------------------------------------------------------------------------
@@ -1206,8 +1205,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}
 		//notify the files table changes
 		this.filesModel.fireTableDataChanged();		
-		//notify the properties table changes
-		this.statusModel.fireTableDataChanged();
 		
 	} // End void actionTrigger	
 	
@@ -1220,20 +1217,27 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	private void setNotAppliedStatus(int pPhase){
 		
-		//avoid the index out of range exception
-		if ((pPhase + 1) > this.statusData.length){
+		//set the not applied status to the corresponding table
+		switch (pPhase + 1){
+		case ClusterApp.STEP_1_LOAD_PRJ:
+			//nothing to do
+		case ClusterApp.STEP_2_LOAD_EF:
+			this.s1StatusData[1][1]		= IAppUtils.STAT_NOT_APPLIED;
+		case ClusterApp.STEP_3_RUN_MKSIM:
+			this.s2StatusData[0][1]		= IAppUtils.STAT_NOT_APPLIED;
+			this.s2StatusData[1][1]		= IAppUtils.STAT_NOT_APPLIED;
+		case ClusterApp.STEP_4_SUBMIT_SIM:
+			this.s3StatusData[0][1]		= IAppUtils.STAT_NOT_APPLIED;
+		case ClusterApp.STEP_4_SUBMIT_SIM + 1:
+			//nothing to do
+			break;
+		default:
+			//avoid the index out of range exception
 			this.sysUtils.printlnErr(	"Index out of range (pPhase + 1 == " 			+ 
-										Integer.toString(pPhase)						+
-										", statusData.length == "						+
-										Integer.toString(this.statusData.length)		+
-										")", this.className + ", setNotAppliedStatus"
-									);
-			return;
-		}
-		
-		//set the not applied status
-		for (int i = pPhase + 1; i < this.statusData.length; i++){
-			this.statusData[i][1]		= IAppUtils.STAT_NOT_APPLIED;
+					Integer.toString(pPhase)						+
+					", status tables lenght == 2"					+
+					")", this.className + ", setNotAppliedStatus"
+				);
 		}			
 		
 	} // End void setNotAppliedStatus
@@ -1258,34 +1262,96 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//table: application properties status 
 		//-----------------------------------------------------------------------------------------------
-		case ClusterApp.TABLE_PROPS:						
+		case ClusterApp.TABLE_PROPS_S1:						
 			//init table
-			this.statusModel			= new PropsTableModel(this.sysUtils, pData, propsHeader);
-			this.statusTable			= new JTable(this.statusModel);
-			TableCellRenderer render	= new PropsTableCellRenderer(this.sysUtils);
+			this.s1StatusModel			= new PropsTableModel(this.sysUtils, pData, propsHeader);
+			this.s1StatusTable			= new JTable(this.s1StatusModel);
+			TableCellRenderer render_1	= new PropsTableCellRenderer(this.sysUtils);
 			//set the custom renderer
-			this.statusTable.getColumnModel().getColumn(0).setCellRenderer(render);
-			this.statusTable.getColumnModel().getColumn(1).setCellRenderer(render);
-			this.statusTable.setEnabled(true);
+			this.s1StatusTable.getColumnModel().getColumn(0).setCellRenderer(render_1);
+			this.s1StatusTable.getColumnModel().getColumn(1).setCellRenderer(render_1);
+			this.s1StatusTable.setEnabled(true);
 			//set the bg and grid color
-			this.statusTable.setBackground(this.mainPanel.getBackground());
-			this.statusTable.setGridColor(this.mainPanel.getBackground());			
+			this.s1StatusTable.setBackground(this.mainPanel.getBackground());
+			this.s1StatusTable.setGridColor(IAppUtils.COLOR_COMPONENTS);			
 			//set cols width
-			int 	wsCol0				= 120;
-			int		wsCol1				= 80;
+			int 	wsCol0_1			= 120;
+			int		wsCol1_1			= 80;
 			//--- col 0
-			this.statusTable.getColumnModel().getColumn(0).setMinWidth(wsCol0);
-			this.statusTable.getColumnModel().getColumn(0).setMaxWidth(wsCol0);
-			this.statusTable.getColumnModel().getColumn(0).setPreferredWidth(wsCol0);
+			this.s1StatusTable.getColumnModel().getColumn(0).setMinWidth(wsCol0_1);
+			this.s1StatusTable.getColumnModel().getColumn(0).setMaxWidth(wsCol0_1);
+			this.s1StatusTable.getColumnModel().getColumn(0).setPreferredWidth(wsCol0_1);
 			//--- col 1
-			this.statusTable.getColumnModel().getColumn(1).setMinWidth(wsCol1);
-			this.statusTable.getColumnModel().getColumn(1).setMaxWidth(wsCol1);
-			this.statusTable.getColumnModel().getColumn(1).setPreferredWidth(wsCol1);
+			this.s1StatusTable.getColumnModel().getColumn(1).setMinWidth(wsCol1_1);
+			this.s1StatusTable.getColumnModel().getColumn(1).setMaxWidth(wsCol1_1);
+			this.s1StatusTable.getColumnModel().getColumn(1).setPreferredWidth(wsCol1_1);
 			//set rows height
-			int		wsRows				= 20;
-			this.statusTable.setRowHeight(wsRows);
+			int		wsRows_1			= 20;
+			this.s1StatusTable.setRowHeight(wsRows_1);
 			//exit
-			break;		
+			break;
+		//-----------------------------------------------------------------------------------------------
+		//table: application properties status 
+		//-----------------------------------------------------------------------------------------------
+		case ClusterApp.TABLE_PROPS_S2:						
+			//init table
+			this.s2StatusModel			= new PropsTableModel(this.sysUtils, pData, propsHeader);
+			this.s2StatusTable			= new JTable(this.s2StatusModel);
+			TableCellRenderer render_2	= new PropsTableCellRenderer(this.sysUtils);
+			//set the custom renderer
+			this.s2StatusTable.getColumnModel().getColumn(0).setCellRenderer(render_2);
+			this.s2StatusTable.getColumnModel().getColumn(1).setCellRenderer(render_2);
+			this.s2StatusTable.setEnabled(true);
+			//set the bg and grid color
+			this.s2StatusTable.setBackground(this.mainPanel.getBackground());
+			this.s2StatusTable.setGridColor(IAppUtils.COLOR_COMPONENTS);			
+			//set cols width
+			int 	wsCol0_2			= 120;
+			int		wsCol1_2			= 80;
+			//--- col 0
+			this.s2StatusTable.getColumnModel().getColumn(0).setMinWidth(wsCol0_2);
+			this.s2StatusTable.getColumnModel().getColumn(0).setMaxWidth(wsCol0_2);
+			this.s2StatusTable.getColumnModel().getColumn(0).setPreferredWidth(wsCol0_2);
+			//--- col 1
+			this.s2StatusTable.getColumnModel().getColumn(1).setMinWidth(wsCol1_2);
+			this.s2StatusTable.getColumnModel().getColumn(1).setMaxWidth(wsCol1_2);
+			this.s2StatusTable.getColumnModel().getColumn(1).setPreferredWidth(wsCol1_2);
+			//set rows height
+			int		wsRows_2			= 20;
+			this.s2StatusTable.setRowHeight(wsRows_2);
+			//exit
+			break;
+		//-----------------------------------------------------------------------------------------------
+		//table: application properties status 
+		//-----------------------------------------------------------------------------------------------
+		case ClusterApp.TABLE_PROPS_S3:						
+			//init table
+			this.s3StatusModel			= new PropsTableModel(this.sysUtils, pData, propsHeader);
+			this.s3StatusTable			= new JTable(this.s3StatusModel);
+			TableCellRenderer render_3	= new PropsTableCellRenderer(this.sysUtils);
+			//set the custom renderer
+			this.s3StatusTable.getColumnModel().getColumn(0).setCellRenderer(render_3);
+			this.s3StatusTable.getColumnModel().getColumn(1).setCellRenderer(render_3);
+			this.s3StatusTable.setEnabled(true);
+			//set the bg and grid color
+			this.s3StatusTable.setBackground(this.mainPanel.getBackground());
+			this.s3StatusTable.setGridColor(IAppUtils.COLOR_COMPONENTS);			
+			//set cols width
+			int 	wsCol0_3			= 120;
+			int		wsCol1_3			= 80;
+			//--- col 0
+			this.s3StatusTable.getColumnModel().getColumn(0).setMinWidth(wsCol0_3);
+			this.s3StatusTable.getColumnModel().getColumn(0).setMaxWidth(wsCol0_3);
+			this.s3StatusTable.getColumnModel().getColumn(0).setPreferredWidth(wsCol0_3);
+			//--- col 1
+			this.s3StatusTable.getColumnModel().getColumn(1).setMinWidth(wsCol1_3);
+			this.s3StatusTable.getColumnModel().getColumn(1).setMaxWidth(wsCol1_3);
+			this.s3StatusTable.getColumnModel().getColumn(1).setPreferredWidth(wsCol1_3);
+			//set rows height
+			int		wsRows_3			= 20;
+			this.s3StatusTable.setRowHeight(wsRows_3);
+			//exit
+			break;
 		//-----------------------------------------------------------------------------------------------
 		//table: list of ef files
 		//-----------------------------------------------------------------------------------------------
@@ -1377,6 +1443,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				this.printAppOutputText(" ERROR: Project not found", ClusterApp.TX_STDERR, true);
 				//log the error
 				this.sysUtils.printlnErr("Project not found", this.className + ", startPhase1 (loadProject)");
+				//update the flag
 				opStatus				= false;
 			}
 				
@@ -1385,6 +1452,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.sysUtils.printlnErr("JFileChooser dialog dismissed", this.className + ", startPhase1 (JFileChooser.ERROR_OPTION)");
 			opStatus					= false;
 		} else if (returnVal == JFileChooser.CANCEL_OPTION){
+			//update the status flag
+			opStatus					= false;
+		} else {
 			//update the status flag
 			opStatus					= false;
 		}
@@ -1410,7 +1480,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			//set the running status
 			this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_RUNNING);
-			this.statusModel.fireTableDataChanged();
+			this.s1StatusModel.fireTableDataChanged();
 			
 			this.opProject.setNetworksMap();
 			
@@ -1464,7 +1534,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//set the running status
 		this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_RUNNING);
-		this.statusModel.fireTableDataChanged();			
+		this.s2StatusModel.fireTableDataChanged();			
 			
 		//run the op_mksim command for the selected net names
 		try {
@@ -1501,9 +1571,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * Start the fifth phase of the system in order to submit simulations to queue
+	 * Start the fourth phase of the system in order to submit simulations to queue
 	 */
-	private void startPhase5(){
+	private void startPhase4(){
 		
 		//local attributes
 		Vector<String>		jobsInfo	= null;
@@ -1527,15 +1597,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 		} catch (OpnetHeavyException e) {
 			//show the error message
-			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase4");
 			//set the status flag
 			opStatus					= false;				
 		}
 		
 		//triggers the corresponding phase and actions
-		this.actionTrigger(ClusterApp.STEP_5_SUBMIT_SIM, opStatus);
+		this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
 		
-	} // End startPhase5
+	} // End startPhase4
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1545,16 +1615,44 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 * @param	pValue		the value to set
 	 */
 	private void statusDataSetValue(String pField, String pValue){
-		
+
 		//avoid null pointer exception
-		if (pField == null || pValue == null || this.statusData == null){ return; }		
+		if (pField == null || pValue == null){ return; }		
 		
 		//look for the correct field
-		for (int i = 0; i < this.statusData.length; i++){
-			if (this.statusData[i][0].equals(pField)){
-				this.statusData[i][1]	= pValue;
-				break;
-			}
+		if (pField.equals(ClusterApp.LABEL_LOAD_PRJ)){
+			//avoid null pointer exception
+			if (this.s1StatusData == null){ return; }
+			
+			this.s1StatusData[0][1]		= pValue;
+			
+		} else if (pField.equals(ClusterApp.LABEL_LOAD_EF)){
+			//avoid null pointer exception
+			if (this.s1StatusData == null){ return; }
+			
+			this.s1StatusData[1][1]		= pValue;
+			
+		} else if (pField.equals(ClusterApp.LABEL_RUN_MKSIM)){
+			//avoid null pointer exception
+			if (this.s2StatusData == null){ return; }
+			
+			this.s2StatusData[0][1]		= pValue;
+			
+		} else if (pField.equals(ClusterApp.LABEL_SUBMIT_SIM)){
+			//avoid null pointer exception
+			if (this.s3StatusData == null){ return; }
+			
+			this.s3StatusData[0][1]		= pValue;
+			
+		} else if (pField.equals(ClusterApp.LABEL_QSTAT)){
+			//avoid null pointer exception
+			if (this.s3StatusData == null){ return; }
+			
+			this.s3StatusData[1][1]		= pValue;
+			
+		} else {
+			//error
+			this.sysUtils.printlnErr("Unknwon field '"	+ pField + "'", this.className + ", setStatusDataValue");
 		}
 		
 	} // End void setStatusDataValue	
@@ -1873,10 +1971,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}
 			
 		//-----------------------------------------------------------------------------------------------
-		//phase 5: submit simulation to queue 
+		//phase 4: submit simulation to queue 
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bSubmitSims){ 
-			this.startPhase5(); 
+			this.startPhase4(); 
 		}
 		
 		//-----------------------------------------------------------------------------------------------
