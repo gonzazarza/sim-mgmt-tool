@@ -4,15 +4,18 @@ package m2gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 //swing classes
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -98,6 +101,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private String[][]					s3StatusData			= null;							//step 3 app status data container
 	private JTable						s3StatusTable			= null;							//step 3 grid for the system props
 	private PropsTableModel				s3StatusModel			= null;							//step 3 default table model
+	private JComboBox					cbOpnetVersion			= null;							//opnet version combobox
 	private JTextField					tfSimLicNumber			= null;							//opnet licenses number field
 	private JTextField					tfSimPriority			= null;							//simulation priority value field
 	private JTextField					tfSimQueue				= null;							//simulation queue name field
@@ -353,6 +357,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pp2Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
 		//--- set background color
 		pp2Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ add listeners
+		this.bRunMKSIM.addActionListener(this);
 		//------ add components
 		pp2Row1.add(this.bRunMKSIM);
 		pp2Row1.add(Box.createHorizontalStrut(30));
@@ -381,6 +387,32 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ add panel
 		ppStep2.add(pp2Row1);		
 		//-----------------------------------------------------------------------------------------------
+		//--- set row 2: run options list
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp2Row2			= new JPanel();
+		JLabel				lOpVer			= new JLabel("OPNET Version:");
+		this.cbOpnetVersion					= new JComboBox();
+		//------ configure components
+		//--------- combobox
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_5);
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_16_0);
+		this.cbOpnetVersion.setEditable(false);
+		this.cbOpnetVersion.setEnabled(false);
+		//--------- labels
+		lOpVer.setFont(new Font(lOpVer.getFont().getFamily(), Font.PLAIN, 12));
+		//------ set border and layout
+		pp2Row2.setLayout(new FlowLayout(FlowLayout.LEFT));
+		pp2Row2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//------ set background color
+		pp2Row2.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ add components
+		pp2Row2.add(lOpVer);
+		pp2Row2.add(Box.createRigidArea(new Dimension(05, 0)));
+		pp2Row2.add(this.cbOpnetVersion);
+		//------ add panel
+		ppStep2.add(pp2Row2);
+		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
 		ppStep2.add(Box.createVerticalStrut(20));
@@ -406,7 +438,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		ppStep3.add(this.setPanelExtra(" Step 3:  Submit jobs"));
 		//-----------------------------------------------------------------------------------------------		
-		//--- set row 2: components and status
+		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp3Row2			= new JPanel();	
 		this.bSubmitSims					= new JButton("Submit simulations");
@@ -415,6 +447,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pp3Row2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
 		//--- set background color
 		pp3Row2.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ add listeners
+		this.bSubmitSims.addActionListener(this);
 		//------ add components
 		pp3Row2.add(this.bSubmitSims);		
 		pp3Row2.add(Box.createHorizontalStrut(30));
@@ -443,15 +477,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ add panel
 		ppStep3.add(pp3Row2);	
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: submit options list
+		//--- set row 2: submit options list
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp3Row1			= new JPanel();
 		JLabel				lSimQueue		= new JLabel("Queue:");
 		JLabel				lSimLicNumber	= new JLabel("Licences:");
 		JLabel				lSimPriority	= new JLabel("Priority:");
-		this.tfSimQueue						= new JTextField("cluster.q", 	5);
-		this.tfSimPriority					= new JTextField("0", 			5);
-		this.tfSimLicNumber					= new JTextField("1", 			5);
+		this.tfSimQueue						= new JTextField("cluster.q", 	10);
+		this.tfSimPriority					= new JTextField("0", 			10);
+		this.tfSimLicNumber					= new JTextField("1", 			10);
 		//------ configure components
 		//--------- queue 
 		this.tfSimQueue.setEnabled(true);
@@ -473,24 +507,23 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
 		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
 		//------ set border and layout
-		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
+//		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
+		pp3Row1.setLayout(new FlowLayout(FlowLayout.LEFT));
 		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//------ set background color
 		pp3Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
-		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
 		pp3Row1.add(lSimQueue);
-		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-		pp3Row1.add(this.tfSimQueue);
-		pp3Row1.add(Box.createRigidArea(new Dimension(30, 0)));
-		pp3Row1.add(lSimLicNumber);
-		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-		pp3Row1.add(this.tfSimLicNumber);
-		pp3Row1.add(Box.createRigidArea(new Dimension(30, 0)));
-		pp3Row1.add(lSimPriority);
-		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-		pp3Row1.add(this.tfSimPriority);
 		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+		pp3Row1.add(this.tfSimQueue);
+		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+		pp3Row1.add(lSimLicNumber);
+		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+		pp3Row1.add(this.tfSimLicNumber);
+		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+		pp3Row1.add(lSimPriority);
+		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+		pp3Row1.add(this.tfSimPriority);
 		//------ add panel
 		ppStep3.add(pp3Row1);
 		//-----------------------------------------------------------------------------------------------
@@ -508,7 +541,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		ppOutput.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//--- set position
 		cpOutput.gridx						= 0;
-		cpOutput.gridy						= 5;
+		cpOutput.gridy						= 3;
 		cpOutput.gridwidth					= 1;
 		cpOutput.gridheight					= 1;
 		cpOutput.fill						= GridBagConstraints.HORIZONTAL;		
@@ -522,7 +555,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow1			= new JPanel();
 		String				userPrompt		= " No output";
-		this.txAppOutput					= new JTextArea(userPrompt, 20, 65);
+		this.txAppOutput					= new JTextArea(userPrompt, 25, 65);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
@@ -709,7 +742,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(this.setPanelExtra(" Included networks"));
+		pmNetInfo.add(this.setPanelExtra(" Included networks (environmental files)"));
 		pmNetInfo.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: title and space
@@ -1041,7 +1074,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * phase 1: load project file
 		 * --- init:		file load dialog
 		 * --- rely on: 	none
-		 * --- triggers: 	phase 2
+		 * --- triggers: 	phase 2as como!!! todo tranqui, pero no te creas que no me acuerdo
 		 *
 		 * phase 2: load ef files
 		 * --- init: 		correct finalization of step 1
@@ -1174,7 +1207,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, IAppUtils.STAT_DONE);
+					
 					//trigger steps
+					//--- nothing to do
+					//apply actions
+					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_RUNNING);
 					
 				} else {
 					//disable gui components
@@ -1188,7 +1225,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				}
 				
 				//notify the properties table changes
-				this.s2StatusModel.fireTableDataChanged();
+				this.s3StatusModel.fireTableDataChanged();
 				
 				//exit
 				break;			
@@ -1223,11 +1260,14 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//nothing to do
 		case ClusterApp.STEP_2_LOAD_EF:
 			this.s1StatusData[1][1]		= IAppUtils.STAT_NOT_APPLIED;
+			//$FALL-THROUGH$
 		case ClusterApp.STEP_3_RUN_MKSIM:
 			this.s2StatusData[0][1]		= IAppUtils.STAT_NOT_APPLIED;
 			this.s2StatusData[1][1]		= IAppUtils.STAT_NOT_APPLIED;
+			//$FALL-THROUGH$
 		case ClusterApp.STEP_4_SUBMIT_SIM:
 			this.s3StatusData[0][1]		= IAppUtils.STAT_NOT_APPLIED;
+			//$FALL-THROUGH$
 		case ClusterApp.STEP_4_SUBMIT_SIM + 1:
 			//nothing to do
 			break;
@@ -1357,7 +1397,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		case ClusterApp.TABLE_FILES:
 			//init table
-			this.filesModel			= new FilesTableModel(this.sysUtils, pData, null);
+			this.filesModel				= new FilesTableModel(this.sysUtils, pData, null);
 			this.filesTable				= new JTable(filesModel);
 			this.filesScroll			= new JScrollPane(this.filesTable);
 			//add sorter
@@ -1556,13 +1596,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		} catch (OpnetHeavyException e) {
 			//show the error message
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase3");
+			//show the error in the output text area
+			this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
 			//set the status flag
 			opStatus					= false;	
 		}
 		
-		//clean the application output text area
-//		this.printAppOutputText(null, ClusterApp.TX_STDOUT, true);
-//		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_3_RUN_MKSIM, opStatus);
 		
@@ -1579,10 +1618,18 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		Vector<String>		jobsInfo	= null;
 		Iterator<String>	it			= null;
 		boolean 			opStatus	= false;
+		String				queueName	= null;
+		int					opLicNum	= 1;
+		float				jobPriority	= 0;
 		
 		try {
 			
-			jobsInfo					= this.opProject.submitSimJobs();
+			//get the submit jobs params
+			queueName					= this.tfSimQueue.getText();
+			opLicNum					= Integer.valueOf(this.tfSimLicNumber.getText());
+			jobPriority					= Float.valueOf(this.tfSimPriority.getText());
+			//submit jobs
+			jobsInfo					= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority);
 			
 			//write the output
 			if (jobsInfo != null){						
@@ -1591,15 +1638,24 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, true);					
 				}				
 			}		
-		
+			
 			//update the completion flag
 			opStatus					= true;
 			
 		} catch (OpnetHeavyException e) {
 			//show the error message
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase4");
+			//show the error in the output text area
+			this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
 			//set the status flag
 			opStatus					= false;				
+		} catch (NumberFormatException e){
+			//show the error message
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase4");
+			//show the error in the output text area
+			this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
+			//set the status flag
+			opStatus					= false;
 		}
 		
 		//triggers the corresponding phase and actions
@@ -1939,6 +1995,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						
 		}		
 		
+		
+		
 	} // End void stateChanged
 	
 	
@@ -2101,30 +2159,43 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		if ((this.cbNetsList.isEnabled()) && (e.getSource() == this.bNetsSave)){
 			String			netName				= (String) this.cbNetsList.getSelectedItem();
-			Vector<String>	params				= null;
+			Vector<String>	vecCode				= new Vector<String>();
 			String			code				= "";
+			int				lines				= 0;
+			int				start				= 0;
+			int				end					= 0;
 			
 			//avoid the selection of the header
 			if ((netName != null) && (netName != this.netsListHeader)){
-				//get the code
+				//get the code and line number
 				code							= this.txMKSIMParams.getText();
+				lines							= this.txMKSIMParams.getLineCount();
+				
+				//put it into a vector
+				try {					
+					for (int i = 0; i < lines; i++){					
+						start					= this.txMKSIMParams.getLineStartOffset(i);
+						end						= this.txMKSIMParams.getLineEndOffset(i);						
+						vecCode.add((code.substring(start, end)).replace(this.lineBreak, ""));
+					}					
+				} catch (BadLocationException ex) {
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist save button)");
+					return;					
+				}
+				
 				//set the new code
-/*
 				try{
 					if (code != null){
-						//TODO
-						//this.opProject.setNetworkMKSIMCode(netName, code);
+						this.opProject.setNewNetworkMKSIMCode(netName, vecCode);
 					}
 				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist save button)");
 					return;					
 				}	
-*/
+				
 			}
 			
 		}
-		
-		//TODO
 		
 		//-----------------------------------------------------------------------------------------------
 		// netlist discard button
@@ -2199,30 +2270,42 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		if ((this.cbSimsList.isEnabled()) && (e.getSource() == this.bSimsSave)){
 			String			simFileName			= (String) this.cbSimsList.getSelectedItem();
-			Vector<String>	params				= null;
+			Vector<String>	vecCode				= new Vector<String>();
 			String			code				= "";
+			int				lines				= 0;
+			int				start				= 0;
+			int				end					= 0;
 			
 			//avoid the selection of the header
 			if ((simFileName != null) && (simFileName != this.simsListHeader)){
-				//get the code
+				//get the code and line number
 				code							= this.txDTSIMParams.getText();
+				lines							= this.txDTSIMParams.getLineCount();
+				
+				//put it into a vector
+				try {					
+					for (int i = 0; i < lines; i++){					
+						start					= this.txDTSIMParams.getLineStartOffset(i);
+						end						= this.txDTSIMParams.getLineEndOffset(i);						
+						vecCode.add((code.substring(start, end)).replace(this.lineBreak, ""));
+					}					
+				} catch (BadLocationException ex) {
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simlist save button)");
+					return;					
+				}
+				
 				//set the new code
-/*
 				try{
 					if (code != null){
-						//TODO
-						//this.opProject.setSimFileCode(simFileName, code);
+						this.opProject.setNewSimFileCode(simFileName, vecCode);
 					}
 				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simlist save button)");
 					return;					
 				}	
-*/	
 			}
 			
 		}
-		
-		//TODO
 		
 		//-----------------------------------------------------------------------------------------------
 		// simslist discard button
@@ -2255,6 +2338,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				}				
 			} 
 		}
+
 		
 	} // End actionPerformed
 	

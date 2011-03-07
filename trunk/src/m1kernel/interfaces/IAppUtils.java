@@ -50,6 +50,14 @@ public interface IAppUtils {
 	/** arch type: 64 bits */
 	static final int		MACHINE_64_BITS		= 2;												
 
+	//--- opnet versions
+	/**	opnet 14.0.A */
+	static final String		OPNET_14_0_A		= "OPNET 14.0.A";
+	/**	opnet 14.5 */
+	static final String		OPNET_14_5			= "OPNET 14.5";
+	/**	opnet 16.0 */
+	static final String		OPNET_16_0			= "OPNET 16.0";
+	
 	//--- opnet 14.0 default settings
 	/** opnet 14.0 project suffix */
 	static final String		SUFFIX_PROJECT		= ".project";										

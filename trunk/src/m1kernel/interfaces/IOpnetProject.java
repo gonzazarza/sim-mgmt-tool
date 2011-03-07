@@ -182,6 +182,18 @@ public interface IOpnetProject {
 	 */
 	public Vector<String> getNetworkMKSIMCode(String pNetName) throws OpnetHeavyException;
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Set the code for the op_mksim command for the specified network
+	 * 
+	 *  @param		pNetName				the network name
+	 *  @param		pCode					the code to set  
+	 * 	@throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 										if the network wasn't found.
+	 */
+	public void setNewNetworkMKSIMCode(String pNetName, Vector<String> pCode) throws OpnetHeavyException;
+	
 	/* ------------------------------------------------------------------------------------------------------------ */	
 	
 	/** 
@@ -203,6 +215,18 @@ public interface IOpnetProject {
 	 * 										if there is a logic error in the file.
 	 */
 	public Vector<String> getSimFileCode(String pFileName) throws OpnetHeavyException;
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * 	Set the sim code of the ef file included and compiled correctly
+	 * 
+	 * @param		pFileName				the ef file name
+	 * @param		pCode					the sim code
+	 * @throws		OpnetHeavyException		if the previous action was not applied.
+	 * 										if there is a logic error in the file.
+	 */
+	public void setNewSimFileCode(String pFileName, Vector<String> pCode) throws OpnetHeavyException;
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -232,7 +256,9 @@ public interface IOpnetProject {
 	/**
 Submit the corresponding jobs to the queue
 	 * 
-	 * 
+	 * @param		pQueueName				the queue to be used
+	 * @param		pOpLicNum				the number of Opnet licenses needed 
+	 * @param		pJobPriority			the Unix priority of the jobs
 	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
@@ -240,7 +266,7 @@ Submit the corresponding jobs to the queue
 	 *  									in case of an OutOfMemory Error
 	 *  
 	 */
-	public Vector<String> submitSimJobs() throws OpnetHeavyException;
+	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority) throws OpnetHeavyException;
 	
 	
 	/*	

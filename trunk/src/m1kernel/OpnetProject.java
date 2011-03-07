@@ -799,6 +799,44 @@ public class OpnetProject implements IOpnetProject {
 	} // End Vector<String> getNetworkMKSIMCode
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Set the code for the op_mksim command for the specified network
+	 * 
+	 *  @param		pNetName				the network name
+	 *  @param		pCode					the code to set  
+	 * 	@throws 	OpnetHeavyException		if the previous operation was not applied.
+	 * 										if the network wasn't found.
+	 */
+	public void setNewNetworkMKSIMCode(String pNetName, Vector<String> pCode) throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isNetworksMapSet) {
+			throw new OpnetHeavyException("Unable to save the network op_mksim code: networks map not set");
+		}
+		
+		//local attributes
+		Iterator<String>	itInner		= null;
+		String				fileName	= ""; 
+		
+		//check the outer map
+		if (this.networksMap.containsKey(pNetName)){
+			//get the iterator for the network
+			itInner						= this.networksMap.get(pNetName).keySet().iterator();
+			//get the first op_mksim code (in theory all networks file names share the same code)
+			if (itInner.hasNext()){
+				fileName				= itInner.next();				
+				this.networksMap.get(pNetName).get(fileName).setEfFileMKSIMCode(pCode);
+			}
+			
+		} else {
+			//network not found
+			throw new OpnetHeavyException("Network name " + pNetName + " not found in the networks map");
+		}		
+				
+	} // End void setNewNetworkMKSIMCode
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
 
 	/** 
 	 * Return the help of the op_mksim command
@@ -893,6 +931,54 @@ public class OpnetProject implements IOpnetProject {
 		return (mkSimCode);
 		
 	} // End Vector<String> getSimFileCode
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * 	Set the sim code of the ef file included and compiled correctly
+	 * 
+	 * @param		pFileName				the ef file name
+	 * @param		pCode					the sim code
+	 * @throws		OpnetHeavyException		if the previous action was not applied.
+	 * 										if there is a logic error in the file.
+	 */
+	public void setNewSimFileCode(String pFileName, Vector<String> pCode) throws OpnetHeavyException {
+		
+		//check the previous operation status
+		if (!this.isSimSetupDone) {
+			throw new OpnetHeavyException("Unable to load the new sim file code: sim setup not applied");
+		}
+		
+		//local attributes
+		String				netName		= "";
+		String[]			splited		= null;
+						
+		//get the network name
+		splited							= pFileName.split(IAppUtils.SPLIT_CHAR);
+		if (splited != null && splited.length >= 3){
+			netName						= splited[0] + IAppUtils.SPLIT_CHAR + splited[1];			
+		} else{
+			throw new OpnetHeavyException("Unable to get the network name from the sim file name '" + pFileName + "'");
+		}
+				
+		//check the outer map
+		if (this.networksMap.containsKey(netName)){
+			
+			if (this.networksMap.get(netName).containsKey(pFileName)){
+			
+				this.networksMap.get(netName).get(pFileName).setSimFileDTSIMCode(pCode);
+				
+			} else {
+				//file name not found
+				throw new OpnetHeavyException("File name " + pFileName + " not found in the networks map");
+			}	 
+			
+		} else {
+			//network not found
+			throw new OpnetHeavyException("Network name " + netName + " not found in the networks map");
+		}	
+		
+	} // End void setNewSimFileCode
 
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1000,26 +1086,28 @@ public class OpnetProject implements IOpnetProject {
 	/**
 	 * Submit the corresponding jobs to the queue
 	 * 
-	 * 
+	 * @param		pQueueName				the queue to be used
+	 * @param		pOpLicNum				the number of Opnet licenses needed 
+	 * @param		pJobPriority			the Unix priority of the jobs
 	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
 	 *  									in case of an IllegalArgumentException
 	 *  									in case of an OutOfMemory Error 
 	 */
-	public Vector<String> submitSimJobs() throws OpnetHeavyException {
+	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority) throws OpnetHeavyException {
 		
-//		//check the previous operation status
-//		if (!this.isRunMKSIMDone) {
-//			throw new OpnetHeavyException("Unable to get the compiled sim job names: op_mksim command not applied");
-//		}
-//		
-//		if (!this.isSimSetupDone) {
-//			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
-//		}
-//		
-//		//clear flag
-//		this.isSimSubmitDone						= false;
+		//check the previous operation status
+		if (!this.isRunMKSIMDone) {
+			throw new OpnetHeavyException("Unable to get the compiled sim job names: op_mksim command not applied");
+		}
+		
+		if (!this.isSimSetupDone) {
+			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
+		}
+		
+		//clear flag
+		this.isSimSubmitDone						= false;
 		
 		//general attributes 	
 		Iterator<String>			itOuter			= null;
@@ -1072,9 +1160,9 @@ public class OpnetProject implements IOpnetProject {
 						jt.setJobName(fileName);
 						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode());
 								
-						jt.setNativeSpecification("-l opnet_licenses=1");
-//						jt.setNativeSpecification("-q test.q");
-//						jt.setNativeSpecification("-p -200");
+						jt.setNativeSpecification("-l opnet_licenses=" + Integer.toString(pOpLicNum));
+						jt.setNativeSpecification("-q " + pQueueName);
+						jt.setNativeSpecification("-p " + Float.toString(pJobPriority));
 						
 						jt.setRemoteCommand("sh");
 						jt.setArgs(new String[] {script_name});

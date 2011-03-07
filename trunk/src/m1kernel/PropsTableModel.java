@@ -127,7 +127,7 @@ public class PropsTableModel extends AbstractTableModel {
 	/* ------------------------------------------------------------------------------------------------------------ */
     
     @Override
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"unchecked"})
     /** @return the column class */
 	public Class getColumnClass(int c) {
          return getValueAt(0, c).getClass();
