@@ -8,7 +8,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 //swing classes
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -133,7 +132,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private Document					deDTSIMParams			= null;							//sun file params documment
 	private JTextArea					txDTSIMHelp				= null;							//sim file help
 	private final String				simsListHeader			= " * Select the sim job *";	//sim files cb header
-	private final String				sismListEmpty			= " * No sim job selected *";	//sim files cb empty item
+	private final String				simsListEmpty			= " * No sim job selected *";	//sim files cb empty item
 	//--- panel: help
 	private JPanel						pHelp					= null;							//help panel
 	
@@ -195,7 +194,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.mainPanel.add(this.tabbedPane);
 
 		//initial diasble/enable gui components
-		//this.initGUILook();		
+		this.initGUILook();		
 		
 	} // End void initComponents
 
@@ -776,7 +775,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 2: title and space
 		//-----------------------------------------------------------------------------------------------
 		pmNetInfo.add(this.setPanelExtra(" op_mksim command params"));
-		pmNetInfo.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 3: info text area
 		//-----------------------------------------------------------------------------------------------
@@ -815,7 +813,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
 		pmHelp.add(this.setPanelExtra(" Help op_mksim command"));
-		pmHelp.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: help text area
 		//-----------------------------------------------------------------------------------------------
@@ -930,7 +927,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
 		psCode.add(this.setPanelExtra(" Simulation job params"));
-		psCode.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: sim combo box
 		//-----------------------------------------------------------------------------------------------
@@ -939,7 +935,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pslCode.setLayout(new BoxLayout(pslCode, BoxLayout.X_AXIS));
 		pslCode.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txDTSIMParams					= new JTextArea("", 10, 60);
+		this.txDTSIMParams					= new JTextArea("", 12, 60);
 		this.deDTSIMParams					= this.txDTSIMParams.getDocument();
 		JScrollPane		paramsScroll		= new JScrollPane(this.txDTSIMParams);
 		this.txDTSIMParams.setEditable(true);
@@ -970,28 +966,24 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
 		psHelp.add(this.setPanelExtra(" Help sim files (general)"));
-		psHelp.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: sim help
 		//-----------------------------------------------------------------------------------------------
-		JPanel			pslHelp			= new JPanel();
+		JPanel			pslHelp				= new JPanel();
 		//------ set border and layout
 		pslHelp.setLayout(new BoxLayout(pslHelp, BoxLayout.X_AXIS));
 		pslHelp.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txDTSIMHelp				= new JTextArea("", 12, 60);
-		JScrollPane		helpScroll		= new JScrollPane(this.txDTSIMHelp);
-		Font			helpFont		= this.txDTSIMHelp.getFont();
+		this.txDTSIMHelp					= new JTextArea("", 12, 60);
+		JScrollPane		helpScroll			= new JScrollPane(this.txDTSIMHelp);
+		Font			helpFont			= this.txDTSIMHelp.getFont();
 		this.txDTSIMHelp.setEditable(false);
 		this.txDTSIMHelp.setFont(new Font(helpFont.getFamily(), Font.PLAIN, 10));
 		//------ add components
 		pslHelp.add(helpScroll);
 		//------ add panel
 		psHelp.add(pslHelp);
-		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
-		//-----------------------------------------------------------------------------------------------
-		psHelp.add(Box.createVerticalGlue());
+
 		
 	} //End void setDT_SIMPanel
 		
@@ -1054,6 +1046,49 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	} // End setPanelExtra
 		
 	/* ------------------------------------------------------------------------------------------------------------ */
+	/**
+	 * Initialize the GUI components for the first time
+	 */
+	private void initGUILook(){
+		
+		//project pane
+		//--- step 2
+		this.bRunMKSIM.setEnabled(false);
+		this.cbOpnetVersion.setEnabled(false);		
+		//--- step 3
+		this.bSubmitSims.setEnabled(false);
+		this.tfSimQueue.setEnabled(false);
+		this.tfSimLicNumber.setEnabled(false);
+		this.tfSimPriority.setEnabled(false);
+		//--- app output
+		this.txAppOutput.setEnabled(true);
+		
+		//file list pane
+		this.filesTable.setEnabled(false);
+		this.ckSelectNone.setEnabled(false);
+		this.ckSelectAll.setEnabled(false);
+		this.txFileContent.setEnabled(true);
+		
+		//setup op_mksim pane
+		this.cbNetsList.setEnabled(false);
+		this.bNetsSave.setEnabled(false);
+		this.bNetsReset.setEnabled(false);
+		this.txMKSIMParams.setEnabled(false);
+		this.txMKSIMHelp.setEnabled(true);
+		
+		//setup sim jobs pane
+		this.cbSimsList.setEnabled(false);
+		this.bSimsSave.setEnabled(false);
+		this.bSimsReset.setEnabled(false);
+		this.txDTSIMParams.setEnabled(false);
+		this.txDTSIMHelp.setEnabled(true);
+		
+		//help pane
+		//--- nothing to do
+		
+	} // End void initGUILook
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
 	/* 2nd-LEVEL METHODS: PRIMARY FUNCTIONALITIES																	*/
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1074,7 +1109,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * phase 1: load project file
 		 * --- init:		file load dialog
 		 * --- rely on: 	none
-		 * --- triggers: 	phase 2as como!!! todo tranqui, pero no te creas que no me acuerdo
+		 * --- triggers: 	phase 2
 		 *
 		 * phase 2: load ef files
 		 * --- init: 		correct finalization of step 1
@@ -1089,7 +1124,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * phase 4: submit simulations to queue
 		 * --- init: 		button submit
 		 * --- rely on: 	phase 3
-		 * --- triggers: 	queue status listener
+		 * --- triggers: 	phase 5 (queue status listener)
+		 * 
+		 * phase 5: monitor simulation jobs
+		 * --- init:		phase 4
+		 * --- rely on:		phase 4
+		 * --- triggers:	none
 		 * 
 		 * -----------------------------------------------------------------------------------------------
 		 */
@@ -1102,22 +1142,68 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_1_LOAD_PRJ:				
 				if (pState == true){
 					//enable gui components
+					//--- project pane
+					//>> nothing to do
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//>> nothing to to
+					//--- help pane
+					//>> nothing to do
 					
 					//set corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_DONE);									
+					
 					//trigger steps
-					this.startPhase2();					
-				} else {
+					this.startPhase2();
+					
+				} else { // pState == FALSE
 					//disable gui components
+					//--- project pane
+					this.bRunMKSIM.setEnabled(false);
+					this.cbOpnetVersion.setEnabled(false);		
+					this.bSubmitSims.setEnabled(false);
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);					
+					//--- file list pane
+					this.filesTable.setEnabled(false);
+					this.ckSelectNone.setEnabled(false);
+					this.ckSelectAll.setEnabled(false);
+					this.txFileContent.setEnabled(true);
+					//--- setup op_mksim pane
+					this.cbNetsList.setEnabled(false);
+					this.bNetsSave.setEnabled(false);
+					this.bNetsReset.setEnabled(false);
+					this.txMKSIMParams.setEnabled(false);
+					this.txMKSIMHelp.setEnabled(true);
+					//--- setup sim jobs pane
+					this.cbSimsList.setEnabled(false);
+					this.bSimsSave.setEnabled(false);
+					this.bSimsReset.setEnabled(false);
+					this.txDTSIMParams.setEnabled(false);
+					this.txDTSIMHelp.setEnabled(true);
+					//--- help pane
+					//>> nothing to do
 					
 					//reset corresponding variables
+					//>> nothing to do
+					
+					//apply actions
+					//--- clear the ef file list
+					this.filesModel.resetModel(null, null);
+					this.filesModel.fireTableDataChanged();
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_FAIL);		
+					
 					//show error messages
-					//--- nothing to do					
+					//>> nothing to do					
 				}		
 				
 				//notify the properties table changes
@@ -1131,18 +1217,60 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_2_LOAD_EF:
 				if (pState == true){
 					//enable gui components
-				
-					//set corresponding variables
+					//--- project pane
+					this.bRunMKSIM.setEnabled(true);
+					//this.cbOpnetVersion.setEnabled(true);
+					//--- file list pane
+					this.filesTable.setEnabled(true);
+					this.ckSelectNone.setEnabled(true);
+					this.ckSelectAll.setEnabled(true);
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//>> nothing to to
+					//--- help pane
+					//>> nothing to do
 					
+					//set corresponding variables
+					//>> nothing to do
+									
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_DONE);
 														
 					//trigger steps
-					//--- nothing to do
-				} else {
+					//>> nothing to do
+					
+				} else {	// pState == FALSE
 					//disable gui components
+					//--- project pane
+					this.bRunMKSIM.setEnabled(false);
+					this.cbOpnetVersion.setEnabled(false);		
+					this.bSubmitSims.setEnabled(false);
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);					
+					//--- file list pane
+					this.filesTable.setEnabled(false);
+					this.ckSelectNone.setEnabled(false);
+					this.ckSelectAll.setEnabled(false);
+					this.txFileContent.setEnabled(true);
+					//--- setup op_mksim pane
+					this.cbNetsList.setEnabled(false);
+					this.bNetsSave.setEnabled(false);
+					this.bNetsReset.setEnabled(false);
+					this.txMKSIMParams.setEnabled(false);
+					this.txMKSIMHelp.setEnabled(true);
+					//--- setup sim jobs pane
+					this.cbSimsList.setEnabled(false);
+					this.bSimsSave.setEnabled(false);
+					this.bSimsReset.setEnabled(false);
+					this.txDTSIMParams.setEnabled(false);
+					this.txDTSIMHelp.setEnabled(true);
+					//--- help pane
+					//>> nothing to do
 					
 					//reset corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_EF, IAppUtils.STAT_FAIL);
@@ -1165,29 +1293,74 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_3_RUN_MKSIM:
 				if (pState == true){
 					//enable gui components
-										
+					//--- project pane
+					this.bSubmitSims.setEnabled(true);
+					this.tfSimQueue.setEnabled(true);
+					this.tfSimLicNumber.setEnabled(true);
+					this.tfSimPriority.setEnabled(true);
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					this.cbSimsList.setEnabled(true);
+					this.txDTSIMParams.setEnabled(true);
+					//--- help pane
+					//>> nothing to do			
+					
 					//set corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_DONE);
+					
 					//trigger steps
-					//--- nothing to do
+					//>> nothing to do
+					
 					//apply actions 
 					//--- update the list of generated sim files
 					this.updateSimsListContent();
 					//--- load the sim file help
 					this.getSimsFileHelp();
-				} else {
+					
+				} else {	// pState == FALSE
 					//disable gui components
+					//--- project pane
+					this.bSubmitSims.setEnabled(false);
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);					
+					//--- file list pane
+					this.filesTable.setEnabled(false);
+					this.ckSelectNone.setEnabled(false);
+					this.ckSelectAll.setEnabled(false);
+					this.txFileContent.setEnabled(true);
+					//--- setup op_mksim pane
+					this.cbNetsList.setEnabled(false);
+					this.bNetsSave.setEnabled(false);
+					this.bNetsReset.setEnabled(false);
+					this.txMKSIMParams.setEnabled(false);
+					this.txMKSIMHelp.setEnabled(true);
+					//--- setup sim jobs pane
+					this.cbSimsList.setEnabled(false);
+					this.bSimsSave.setEnabled(false);
+					this.bSimsReset.setEnabled(false);
+					this.txDTSIMParams.setEnabled(false);
+					this.txDTSIMHelp.setEnabled(true);
+					//--- help pane
+					//>> nothing to do
 					
 					//reset corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_FAIL);
 					
 					//apply actions
+					//>> nothing to do
 					
 					//show error messages
+					//>> nothing to do
 										
 				}
 				
@@ -1202,26 +1375,107 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			case ClusterApp.STEP_4_SUBMIT_SIM:
 				if (pState == true){
 					//enable gui components
-										
+					//--- project pane
+					//>> nothing to do
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//--- help pane
+					//>> nothing to do				
+					
 					//set corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, IAppUtils.STAT_DONE);
 					
-					//trigger steps
-					//--- nothing to do
 					//apply actions
-					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_RUNNING);
+					//>> nothing to do
 					
-				} else {
+					//trigger steps
+					this.startPhase5();					
+					
+				} else {	// pState == FALSE
 					//disable gui components
+					//--- project pane
+					//>> nothing to do
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//--- help pane
+					//>> nothing to do
 					
 					//reset corresponding variables
+					//>> nothing to do
 					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_SUBMIT_SIM, IAppUtils.STAT_FAIL);
-					//show error messages
 					
+					//apply actions
+					//>> nothing to do
+					
+					//show error messages
+					//>> nothing to do
+				}
+				
+				//notify the properties table changes
+				this.s3StatusModel.fireTableDataChanged();
+				
+				//exit
+				break;
+				
+			// -----------------------------------------------------------------------------------------------
+			// phase 5: monitor simulation jobs
+			// -----------------------------------------------------------------------------------------------				
+			case ClusterApp.STEP_5_MONITOR_JOBS:
+				if (pState == true){
+					//enable gui components
+					//--- project pane
+					//>> nothing to do
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//--- help pane
+					//>> nothing to do
+					
+					//set corresponding variables
+					//>> nothing to do
+					
+					//update phase status in the properties table
+					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_DONE);
+					
+					//trigger steps
+					//>> nothing to do					
+					
+				} else {	// pState == FALSE
+					//disable gui components
+					//--- project pane
+					//>> nothing to do
+					//--- file list pane
+					//>> nothing to do
+					//--- setup op_mksim pane
+					//>> nothing to do
+					//--- setup sim jobs pane
+					//--- help pane
+					//>> nothing to do
+					
+					//reset corresponding variables
+					//>> nothing to do
+					
+					//update phase status in the properties table
+					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_FAIL);
+					
+					//apply actions
+					//>> nothing to do
+					
+					//show error messages
+					//>> nothing to do
 				}
 				
 				//notify the properties table changes
@@ -1628,19 +1882,41 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			queueName					= this.tfSimQueue.getText();
 			opLicNum					= Integer.valueOf(this.tfSimLicNumber.getText());
 			jobPriority					= Float.valueOf(this.tfSimPriority.getText());
-			//submit jobs
-			jobsInfo					= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority);
 			
-			//write the output
-			if (jobsInfo != null){						
-				it						= jobsInfo.iterator();				
-				while (it.hasNext()){					
-					this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, true);					
+			//check priority value
+			//from man qsub: 
+			//	The  qsub  utility shall accept a value for the priority option-argument 
+			//	that conforms to the syntax for signed decimal integers, and which is not
+		    //	less than -1024 and not greater than 1023.
+			if ((jobPriority < -1024) || (jobPriority > 1023)){
+				
+				//show the error message
+				this.sysUtils.printlnErr(	"Priority value " 				+  
+											this.tfSimPriority.getText() 	+ 
+											" not valid! Should be [-1024 ; 1023]", 
+											this.className + ", startPhase4");
+				//show the error in the output text area
+				this.printAppOutputText(	"Priority value " 				+  
+											this.tfSimPriority.getText() 	+ 
+											" not valid! Should be [-1024 ; 1023]", 
+											ClusterApp.TX_STDERR, true);
+				//set the status flag
+				opStatus				= false;
+				
+			} else {			
+				//submit jobs
+				jobsInfo				= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority);
+				
+				//write the output
+				if (jobsInfo != null){						
+					it					= jobsInfo.iterator();				
+					while (it.hasNext()){					
+						this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, true);					
+					}				
 				}				
-			}		
-			
-			//update the completion flag
-			opStatus					= true;
+				//update the completion flag
+				opStatus				= true;
+			}
 			
 		} catch (OpnetHeavyException e) {
 			//show the error message
@@ -1662,6 +1938,23 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
 		
 	} // End startPhase4
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** 
+	 * Start the fifth phase of the system in order to monitor the simulation jobs on the queue
+	 */
+	private void startPhase5(){
+		
+		//local attributes
+		boolean 			opStatus	= false;
+		
+		//TODO
+		
+		//triggers the corresponding phase and actions
+		this.actionTrigger(ClusterApp.STEP_5_MONITOR_JOBS, opStatus);
+		
+	} // End startPhase5
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -1782,6 +2075,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.cbSimsList.removeAllItems();
 		this.cbSimsList.setEnabled(false);
 		
+		//check the number of ef files
+		if (!this.opProject.isRunMKSIMDone()){
+			this.cbSimsList.addItem(this.simsListEmpty);
+			return;
+		}
+		
 		//get the jobs list
 		try {
 			//get the names
@@ -1801,7 +2100,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				
 			} else {
 				//nothing to load 
-				this.cbSimsList.addItem(this.sismListEmpty);
+				this.cbSimsList.addItem(this.simsListEmpty);
 			}
 			
 		} catch (OpnetHeavyException e) {
@@ -1992,10 +2291,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			if (title == ClusterApp.TAB_3_MKSIM){
 				this.updateNetsListContent();
 			}
-						
-		}		
-		
-		
+				
+			//trigger the sim jobs pane update function
+			if (title == ClusterApp.TAB_4_SIM){
+				this.updateSimsListContent();
+			}
+			
+		}				
 		
 	} // End void stateChanged
 	
@@ -2191,7 +2493,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist save button)");
 					return;					
-				}	
+				}
+				
+				//after save, disable both buttons
+				this.bNetsReset.setEnabled(false);
+				this.bNetsSave.setEnabled(false);
 				
 			}
 			
@@ -2225,7 +2531,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (netlist discard button)");
 					return;					
-				}				
+				}
+				
+				//after reset, disable both buttons
+				this.bNetsReset.setEnabled(false);
+				this.bNetsSave.setEnabled(false);
+				
 			} 
 		}
 		
@@ -2303,6 +2614,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simlist save button)");
 					return;					
 				}	
+				
+				//after save, disable both buttons
+				this.bSimsReset.setEnabled(false);
+				this.bSimsSave.setEnabled(false);
+				
 			}
 			
 		}
@@ -2335,7 +2651,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				} catch (OpnetHeavyException ex){
 					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (simslist discard button");
 					return;					
-				}				
+				}		
+				
+				//after reset, disable both buttons
+				this.bNetsReset.setEnabled(false);
+				this.bNetsSave.setEnabled(false);
+				
 			} 
 		}
 
@@ -2449,7 +2770,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				}
 			} // end double-click
 				
-		} 
+		} // end object file list 
 		
 	} // End mouseClicked
 
@@ -2590,7 +2911,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				
 			} // end enter key pressed
 			
-		}
+		} // end object file list table
 		
 	} // End void keyPressed
 

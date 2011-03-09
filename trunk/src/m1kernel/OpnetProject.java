@@ -1497,6 +1497,9 @@ public class OpnetProject implements IOpnetProject {
 	*/
 	/** @return the projectName */
 	public String getProjectName() { return projectName; }
+
+	/** @return the isRunMKSIMDone */
+	public boolean isRunMKSIMDone() { return isRunMKSIMDone; }
 	
 	
 } // End class OpnetProject

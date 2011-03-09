@@ -41,6 +41,7 @@ public abstract class ClusterClass {
 	static final int		STEP_2_LOAD_EF		= 1;							//step 2: load ef file list
 	static final int		STEP_3_RUN_MKSIM	= 2;							//step 3: run op_mksim command
 	static final int		STEP_4_SUBMIT_SIM	= 3;							//step 4: submit simulation to queue
+	static final int 		STEP_5_MONITOR_JOBS	= 4;							//step 5: monitor simulation on queue
 	//tabbed pane titles
 	static final String		TAB_1_PRJ			= "OPNET Project";				//tab 1: opnet project
 	static final String		TAB_2_EF			= "File list (*.ef)";			//tab 2: ef file list

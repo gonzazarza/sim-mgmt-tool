@@ -277,6 +277,8 @@ Submit the corresponding jobs to the queue
 	/** @return the projectName */
 	public String getProjectName();
 	
+	/** @return the isRunMKSIMDone */
+	public boolean isRunMKSIMDone();
 	
 } // End interface IOpnetProject
 
