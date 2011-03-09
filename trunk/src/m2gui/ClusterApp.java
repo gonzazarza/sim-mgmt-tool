@@ -365,11 +365,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ set status data	
 		this.s2StatusData					= new String[2][2];
 		//------ 0
-		this.s2StatusData[0][0]				= new String(ClusterApp.LABEL_RUN_MKSIM);	
+		this.s2StatusData[0][0]				= new String(ClusterApp.LABEL_CHECK_OP_VER);	
 		this.s2StatusData[0][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ 1
-		this.s2StatusData[1][0]				= new String(" ");
-		this.s2StatusData[1][1]				= new String(" ");
+		this.s2StatusData[1][0]				= new String(ClusterApp.LABEL_RUN_MKSIM);
+		this.s2StatusData[1][1]				= new String(IAppUtils.STAT_NOT_APPLIED);
 		//------ initialize status table
 		boolean status2						= this.initTable(ClusterApp.TABLE_PROPS_S2, this.s2StatusData);
 		//------ add status table
@@ -404,7 +404,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pp2Row2.setLayout(new FlowLayout(FlowLayout.LEFT));
 		pp2Row2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//------ set background color
-		pp2Row2.setBackground(IAppUtils.COLOR_COMPONENTS);
+		pp2Row2.setBackground(IAppUtils.COLOR_NOT_APPLIED);
 		//------ add components
 		pp2Row2.add(lOpVer);
 		pp2Row2.add(Box.createRigidArea(new Dimension(05, 0)));
@@ -510,7 +510,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pp3Row1.setLayout(new FlowLayout(FlowLayout.LEFT));
 		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 		//------ set background color
-		pp3Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		pp3Row1.setBackground(IAppUtils.COLOR_NOT_APPLIED);
 		//------ add components
 		pp3Row1.add(lSimQueue);
 		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
@@ -1312,6 +1312,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//>> nothing to do
 					
 					//update phase status in the properties table
+					this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_DONE);
 					
 					//trigger steps
@@ -1354,6 +1355,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//>> nothing to do
 					
 					//update phase status in the properties table
+					this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_FAIL);
 					
 					//apply actions
@@ -1981,11 +1983,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			this.s1StatusData[1][1]		= pValue;
 			
-		} else if (pField.equals(ClusterApp.LABEL_RUN_MKSIM)){
+		} else if (pField.equals(ClusterApp.LABEL_CHECK_OP_VER)){
 			//avoid null pointer exception
 			if (this.s2StatusData == null){ return; }
 			
 			this.s2StatusData[0][1]		= pValue;
+			
+		} else if (pField.equals(ClusterApp.LABEL_RUN_MKSIM)){
+			//avoid null pointer exception
+			if (this.s2StatusData == null){ return; }
+			
+			this.s2StatusData[1][1]		= pValue;
 			
 		} else if (pField.equals(ClusterApp.LABEL_SUBMIT_SIM)){
 			//avoid null pointer exception
@@ -2449,9 +2457,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					return;					
 				}
 				
+				//enable the params text area
+				this.txMKSIMParams.setEnabled(true);
+				
 			} else {
 				//clear the output
 				this.txMKSIMParams.setText("");
+				//disable the params text area
+				this.txMKSIMParams.setEnabled(false);
+				//diable buttons
+				this.bNetsReset.setEnabled(false);
+				this.bNetsSave.setEnabled(false);
 			}
 			
 		}
@@ -2536,7 +2552,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				//after reset, disable both buttons
 				this.bNetsReset.setEnabled(false);
 				this.bNetsSave.setEnabled(false);
-				
+								
 			} 
 		}
 		
@@ -2569,9 +2585,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					return;					
 				}
 				
+				//enable the params text area
+				this.txDTSIMParams.setEnabled(true);
+				
 			} else {
 				//clear the output
 				this.txDTSIMParams.setText("");
+				//disable the params text area
+				this.txDTSIMParams.setEnabled(false);
+				//diable buttons
+				this.bSimsReset.setEnabled(false);
+				this.bSimsSave.setEnabled(false);
 			}
 			
 		}
