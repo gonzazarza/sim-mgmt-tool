@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Vector;
 import org.ggf.drmaa.DrmaaException;
 import org.ggf.drmaa.InternalException;
@@ -261,10 +262,16 @@ public class OpnetProject implements IOpnetProject {
 					item 				= this.appUtils.runCommandMKSim(this.projectPath, lineCode.toString());
 					
 					if (!item.stderrActive()){
+						//save the file name
+						outVec.add("==============================================" + this.lineBreak);
+						outVec.add(" OP_MKSIM NETNAME " + netName 					+ this.lineBreak);
+						outVec.add("==============================================" + this.lineBreak);
 						//save the output
 						if (item.stdoutActive()){
 							outVec.add(item.getStdout());
 						} 
+						//put an end mark
+						outVec.add("==============================================" + this.lineBreak);
 						//load the sim file name
 						this.loadSimFileName(netName);
 						//set the compiled flag
@@ -1122,7 +1129,8 @@ public class OpnetProject implements IOpnetProject {
 		Vector<String>				jobsInfo		= new Vector<String>();
 		SessionFactory				factory			= SessionFactory.getFactory();
 		Session						session			= factory.getSession();
-		JobTemplate 				jt				= null; 
+		JobTemplate 				jt				= null;
+		String						uniqueShId		= "NO-SH-ID";
 		String 						id				= "NO-ID";
 		String						script_name		= "NO-NAME";
 			
@@ -1157,8 +1165,11 @@ public class OpnetProject implements IOpnetProject {
 						//init the job template
 						jt							= session.createJobTemplate();
 						
+						//get the unique id for the shell script name
+						uniqueShId					= UUID.randomUUID().toString();
+						
 						jt.setJobName(fileName);
-						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode());
+						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
 								
 						jt.setNativeSpecification("-l opnet_licenses=" + Integer.toString(pOpLicNum));
 						jt.setNativeSpecification("-q " + pQueueName);

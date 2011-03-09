@@ -28,6 +28,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 //util classes
 import java.util.Iterator;
 import java.util.Set;
@@ -194,7 +195,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.mainPanel.add(this.tabbedPane);
 
 		//initial diasble/enable gui components
-		this.initGUILook();		
+//		this.initGUILook();		//TODO
 		
 	} // End void initComponents
 
@@ -279,17 +280,23 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppStep1.add(this.setPanelExtra(" Step 1:  Select project file"));
+//		ppStep1.add(this.setPanelExtra(" Step 1:  Select project file"));
+		
+		ppStep1.add(this.setPanelExtra(" Application steps"));
+		ppStep1.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp1Row1			= new JPanel();	
-		this.bBrowse						= new JButton("Browse directories");
+		this.bBrowse						= new JButton("Step 1:  Select project file");
 		this.dFileChooser					= new JFileChooser();
 		this.dFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		this.dFileChooser.setFileFilter(new FileNameExtensionFilter("Opnet project file (*.prj)","prj"));
 		this.dFileChooser.setMultiSelectionEnabled(false);
 		this.bBrowse.addActionListener(this);	
+		
+		this.bBrowse.setPreferredSize(new Dimension(300, 25));
+		
 		//------ set border and layout
 		pp1Row1.setLayout(new BoxLayout(pp1Row1, BoxLayout.X_AXIS));
 		pp1Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -325,7 +332,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
-		ppStep1.add(Box.createVerticalStrut(20));
+		ppStep1.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: step 2, run op_mksim
@@ -345,12 +352,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppStep2.add(this.setPanelExtra(" Step 2:  Run op_mksim"));
+//		ppStep2.add(this.setPanelExtra(" Step 2:  Run op_mksim"));
 		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp2Row1			= new JPanel();	
-		this.bRunMKSIM						= new JButton("Run command");
+		this.bRunMKSIM						= new JButton("Step 2:  op_mksim command");
+		
+		this.bRunMKSIM.setPreferredSize(new Dimension(300, 25));
+		
 		//------ set border and layout
 		pp2Row1.setLayout(new BoxLayout(pp2Row1, BoxLayout.X_AXIS));
 		pp2Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -388,33 +398,33 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 2: run options list
 		//-----------------------------------------------------------------------------------------------
-		JPanel				pp2Row2			= new JPanel();
-		JLabel				lOpVer			= new JLabel("OPNET Version:");
-		this.cbOpnetVersion					= new JComboBox();
-		//------ configure components
-		//--------- combobox
-		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
-		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_5);
-		this.cbOpnetVersion.addItem(IAppUtils.OPNET_16_0);
-		this.cbOpnetVersion.setEditable(false);
-		this.cbOpnetVersion.setEnabled(false);
-		//--------- labels
-		lOpVer.setFont(new Font(lOpVer.getFont().getFamily(), Font.PLAIN, 12));
-		//------ set border and layout
-		pp2Row2.setLayout(new FlowLayout(FlowLayout.LEFT));
-		pp2Row2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//------ set background color
-		pp2Row2.setBackground(IAppUtils.COLOR_NOT_APPLIED);
-		//------ add components
-		pp2Row2.add(lOpVer);
-		pp2Row2.add(Box.createRigidArea(new Dimension(05, 0)));
-		pp2Row2.add(this.cbOpnetVersion);
-		//------ add panel
-		ppStep2.add(pp2Row2);
+//		JPanel				pp2Row2			= new JPanel();
+//		JLabel				lOpVer			= new JLabel("OPNET Version:");
+//		this.cbOpnetVersion					= new JComboBox();
+//		//------ configure components
+//		//--------- combobox
+//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
+//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_5);
+//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_16_0);
+//		this.cbOpnetVersion.setEditable(false);
+//		this.cbOpnetVersion.setEnabled(false);
+//		//--------- labels
+//		lOpVer.setFont(new Font(lOpVer.getFont().getFamily(), Font.PLAIN, 12));
+//		//------ set border and layout
+//		pp2Row2.setLayout(new FlowLayout(FlowLayout.LEFT));
+//		pp2Row2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+//		//------ set background color
+//		pp2Row2.setBackground(IAppUtils.COLOR_NOT_APPLIED);
+//		//------ add components
+//		pp2Row2.add(lOpVer);
+//		pp2Row2.add(Box.createRigidArea(new Dimension(05, 0)));
+//		pp2Row2.add(this.cbOpnetVersion);
+//		//------ add panel
+//		ppStep2.add(pp2Row2);
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
-		ppStep2.add(Box.createVerticalStrut(20));
+		ppStep2.add(Box.createVerticalStrut(10));
 		
 		
 		//-----------------------------------------------------------------------------------------------
@@ -435,12 +445,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppStep3.add(this.setPanelExtra(" Step 3:  Submit jobs"));
+//		ppStep3.add(this.setPanelExtra(" Step 3:  Submit jobs"));
 		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp3Row2			= new JPanel();	
-		this.bSubmitSims					= new JButton("Submit simulations");
+		this.bSubmitSims					= new JButton("Step 3:  Submit simulations");
+
+		this.bSubmitSims.setPreferredSize(new Dimension(300, 25));
+		
 		//------ set border and layout
 		pp3Row2.setLayout(new BoxLayout(pp3Row2, BoxLayout.X_AXIS));
 		pp3Row2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -478,53 +491,53 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 2: submit options list
 		//-----------------------------------------------------------------------------------------------
-		JPanel				pp3Row1			= new JPanel();
-		JLabel				lSimQueue		= new JLabel("Queue:");
-		JLabel				lSimLicNumber	= new JLabel("Licences:");
-		JLabel				lSimPriority	= new JLabel("Priority:");
-		this.tfSimQueue						= new JTextField("cluster.q", 	10);
-		this.tfSimPriority					= new JTextField("0", 			10);
-		this.tfSimLicNumber					= new JTextField("1", 			10);
-		//------ configure components
-		//--------- queue 
-		this.tfSimQueue.setEnabled(true);
-		this.tfSimQueue.setEditable(false);
-		this.tfSimQueue.setHorizontalAlignment(JTextField.RIGHT);
-		this.tfSimQueue.setFont(new Font(this.tfSimQueue.getFont().getFamily(), Font.PLAIN, 12));
-		//--------- licenses number
-		this.tfSimLicNumber.setEnabled(true);
-		this.tfSimLicNumber.setEditable(false);
-		this.tfSimLicNumber.setHorizontalAlignment(JTextField.RIGHT);
-		this.tfSimLicNumber.setFont(new Font(this.tfSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
-		//--------- job priority
-		this.tfSimPriority.setEnabled(true);
-		this.tfSimPriority.setEditable(true);
-		this.tfSimPriority.setHorizontalAlignment(JTextField.RIGHT);
-		this.tfSimPriority.setFont(new Font(this.tfSimPriority.getFont().getFamily(), Font.PLAIN, 12));
-		//--------- labels
-		lSimQueue.setFont(new Font(lSimQueue.getFont().getFamily(), Font.PLAIN, 12));
-		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
-		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
-		//------ set border and layout
-//		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
-		pp3Row1.setLayout(new FlowLayout(FlowLayout.LEFT));
-		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//------ set background color
-		pp3Row1.setBackground(IAppUtils.COLOR_NOT_APPLIED);
-		//------ add components
-		pp3Row1.add(lSimQueue);
-		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-		pp3Row1.add(this.tfSimQueue);
-		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-		pp3Row1.add(lSimLicNumber);
-		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-		pp3Row1.add(this.tfSimLicNumber);
-		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-		pp3Row1.add(lSimPriority);
-		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-		pp3Row1.add(this.tfSimPriority);
-		//------ add panel
-		ppStep3.add(pp3Row1);
+//		JPanel				pp3Row1			= new JPanel();
+//		JLabel				lSimQueue		= new JLabel("Queue:");
+//		JLabel				lSimLicNumber	= new JLabel("Licences:");
+//		JLabel				lSimPriority	= new JLabel("Priority:");
+//		this.tfSimQueue						= new JTextField("cluster.q", 	10);
+//		this.tfSimPriority					= new JTextField("0", 			10);
+//		this.tfSimLicNumber					= new JTextField("1", 			10);
+//		//------ configure components
+//		//--------- queue 
+//		this.tfSimQueue.setEnabled(true);
+//		this.tfSimQueue.setEditable(false);
+//		this.tfSimQueue.setHorizontalAlignment(JTextField.RIGHT);
+//		this.tfSimQueue.setFont(new Font(this.tfSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+//		//--------- licenses number
+//		this.tfSimLicNumber.setEnabled(true);
+//		this.tfSimLicNumber.setEditable(false);
+//		this.tfSimLicNumber.setHorizontalAlignment(JTextField.RIGHT);
+//		this.tfSimLicNumber.setFont(new Font(this.tfSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+//		//--------- job priority
+//		this.tfSimPriority.setEnabled(true);
+//		this.tfSimPriority.setEditable(true);
+//		this.tfSimPriority.setHorizontalAlignment(JTextField.RIGHT);
+//		this.tfSimPriority.setFont(new Font(this.tfSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+//		//--------- labels
+//		lSimQueue.setFont(new Font(lSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+//		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+//		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+//		//------ set border and layout
+////		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
+//		pp3Row1.setLayout(new FlowLayout(FlowLayout.LEFT));
+//		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+//		//------ set background color
+//		pp3Row1.setBackground(IAppUtils.COLOR_NOT_APPLIED);
+//		//------ add components
+//		pp3Row1.add(lSimQueue);
+//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+//		pp3Row1.add(this.tfSimQueue);
+//		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+//		pp3Row1.add(lSimLicNumber);
+//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+//		pp3Row1.add(this.tfSimLicNumber);
+//		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
+//		pp3Row1.add(lSimPriority);
+//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
+//		pp3Row1.add(this.tfSimPriority);
+//		//------ add panel
+//		ppStep3.add(pp3Row1);
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
@@ -548,7 +561,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 0: title and space
 		//-----------------------------------------------------------------------------------------------
-		ppOutput.add(this.setPanelExtra(" App output"));
+		ppOutput.add(this.setPanelExtra(" General output"));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: output text area
 		//-----------------------------------------------------------------------------------------------
@@ -556,6 +569,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		String				userPrompt		= " No output";
 		this.txAppOutput					= new JTextArea(userPrompt, 25, 65);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
+		
+		this.txAppOutput.setBackground(IAppUtils.COLOR_COMPONENTS);
+		
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
 		ppoRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
@@ -754,6 +770,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.cbNetsList						= new JComboBox();
 		this.bNetsSave						= new JButton("Save");
 		this.bNetsReset						= new JButton("Discard");
+		//------ setup components
+		this.cbNetsList.setMinimumSize(new Dimension(500,25));
+		this.cbNetsList.setPreferredSize(new Dimension(500,25));
+		this.cbNetsList.setMaximumSize(new Dimension(500,25));
 		//------ add listeners
 		this.cbNetsList.addActionListener(this);
 		this.bNetsSave.addActionListener(this);
@@ -769,8 +789,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//set bottom glue
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(Box.createVerticalStrut(30));
-		pmNetInfo.add(Box.createVerticalGlue());		
+		pmNetInfo.add(Box.createVerticalGlue());	
+		pmNetInfo.add(Box.createVerticalStrut(30));	
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 2: title and space
 		//-----------------------------------------------------------------------------------------------
@@ -895,6 +915,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.cbSimsList						= new JComboBox();
 		this.bSimsSave						= new JButton("Save");
 		this.bSimsReset						= new JButton("Discard");
+		//------ setup components
+		this.cbSimsList.setMinimumSize(new Dimension(500,25));
+		this.cbSimsList.setPreferredSize(new Dimension(500,25));
+		this.cbSimsList.setMaximumSize(new Dimension(500,25));		
 		//------ add listeners
 		this.cbSimsList.addActionListener(this);
 		this.bSimsSave.addActionListener(this);
@@ -1312,7 +1336,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//>> nothing to do
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_DONE);
 					
 					//trigger steps
@@ -1355,7 +1378,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//>> nothing to do
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 					this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_FAIL);
 					
 					//apply actions
@@ -1782,9 +1804,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			//load the data in the files table
 			this.filesModel.resetModel(null, this.opProject.getFilesData());
-			//update the files table
-			this.filesModel.fireTableDataChanged();
-			
+						
 			//update the ef selected label
 			this.updateFilesSelectedInfo();
 			
@@ -1822,16 +1842,46 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * 
 		 */
 		
+		//TODO: NO SE PORQUE PERO HAY PROBLEMAS CON LOS OUTPUTS DE LOS MK_SIM...
+		//TAMBIEN TENGO QUE TENER EN CUENTA QUE PUEDO TENER MAS DE UNA COMPILACION...
+		
 		//local attributes
 		boolean 			opStatus	= false;
 		Iterator<String>	outIt		= null;
 		Vector<String>		outVec		= null;
 		String				output		= null;
+		Set<String>			selNets		= null;
 		
+		//check if ef files selected
+		try {
+			selNets							= this.opProject.getSelectedNetworksNames();
+			
+			if (selNets == null || selNets.size() == 0){
+				//show the error in the output text area
+				this.printAppOutputText("No environmental file(s) selected!!!", ClusterApp.TX_STDERR, true);
+				//show a popup error message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"No environmental file(s) selected!!!",
+						"Error",
+						JOptionPane.ERROR_MESSAGE);	
+				//get out!
+				return;
+			}
+			
+		} catch (OpnetHeavyException e) {
+			//show the error message
+			this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase3");
+			//show the error in the output text area
+			this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
+			return;
+		}
+		
+		//set the Opnet version status
+		this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 		//set the running status
 		this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_RUNNING);
-		this.s2StatusModel.fireTableDataChanged();			
-			
+		
 		//run the op_mksim command for the selected net names
 		try {
 		
@@ -1843,6 +1893,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			outIt						= outVec.iterator();
 			while(outIt.hasNext()){
 				output					= outIt.next();
+//				System.out.println(output); //TODO: temp
 				this.printAppOutputText(output, ClusterApp.TX_STDOUT, true);
 			}			
 			
@@ -1976,37 +2027,42 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			if (this.s1StatusData == null){ return; }
 			
 			this.s1StatusData[0][1]		= pValue;
+			this.s1StatusModel.fireTableDataChanged();
 			
 		} else if (pField.equals(ClusterApp.LABEL_LOAD_EF)){
 			//avoid null pointer exception
 			if (this.s1StatusData == null){ return; }
 			
 			this.s1StatusData[1][1]		= pValue;
+			this.s1StatusModel.fireTableDataChanged();
 			
 		} else if (pField.equals(ClusterApp.LABEL_CHECK_OP_VER)){
 			//avoid null pointer exception
 			if (this.s2StatusData == null){ return; }
 			
 			this.s2StatusData[0][1]		= pValue;
+			this.s2StatusModel.fireTableDataChanged();
 			
 		} else if (pField.equals(ClusterApp.LABEL_RUN_MKSIM)){
 			//avoid null pointer exception
 			if (this.s2StatusData == null){ return; }
 			
 			this.s2StatusData[1][1]		= pValue;
+			this.s2StatusModel.fireTableDataChanged();
 			
 		} else if (pField.equals(ClusterApp.LABEL_SUBMIT_SIM)){
 			//avoid null pointer exception
 			if (this.s3StatusData == null){ return; }
 			
 			this.s3StatusData[0][1]		= pValue;
+			this.s3StatusModel.fireTableDataChanged();
 			
 		} else if (pField.equals(ClusterApp.LABEL_QSTAT)){
 			//avoid null pointer exception
 			if (this.s3StatusData == null){ return; }
 			
 			this.s3StatusData[1][1]		= pValue;
-			
+			this.s3StatusModel.fireTableDataChanged();
 		} else {
 			//error
 			this.sysUtils.printlnErr("Unknwon field '"	+ pField + "'", this.className + ", setStatusDataValue");

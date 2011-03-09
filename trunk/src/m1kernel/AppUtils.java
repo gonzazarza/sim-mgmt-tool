@@ -1190,9 +1190,10 @@ public class AppUtils implements IAppUtils {
 	 * 
 	 * @param	pScriptPath			the script path
 	 * @param	pCmd				the command to run
+	 * @param 	pId					the job id
 	 * @return						the bash script file name
 	 */
-	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd){
+	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd, String pId){
 		
 		//local attributes
 		String 			fileDir			= null;
@@ -1211,7 +1212,7 @@ public class AppUtils implements IAppUtils {
 		}
 				
 		//create the new bash script file
-		bashFile		 				= new File(fileDir, "gen_script_file.sh");		
+		bashFile		 				= new File(fileDir, "job_script_" + pId + ".sh");		
 		
 		//load the full file name
 		fullFileName					= bashFile.getAbsolutePath();

@@ -67,8 +67,6 @@ public class PropsTableCellRenderer extends DefaultTableCellRenderer {
 		Component	cell 	= super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 		Font		fOld	= cell.getFont();
 		
-		
-		
 		//avoid the null pointer exception
 		if (value == null){ return (null); }
 		

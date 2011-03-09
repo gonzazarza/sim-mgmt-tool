@@ -222,9 +222,10 @@ public interface IAppUtils {
 	 * 
 	 * @param	pScriptPath			the script path
 	 * @param	pCmd				the command to run
+	 * @param 	pId					the job id
 	 * @return						the bash script file name
 	 */
-	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd);
+	public String newGenericBashScript(String pScriptPath, Vector<String> pCmd, String pId);
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
