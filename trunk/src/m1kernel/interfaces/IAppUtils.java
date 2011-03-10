@@ -4,13 +4,14 @@ package m1kernel.interfaces;
 import java.awt.Color;
 import java.util.Vector;
 import m1kernel.ConsoleJob;
+import m1kernel.exceptions.OpnetHeavyException;
 
 
 /** 
  * Interface to access to the application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0306
+ * @version		2011.0310
  */
 public interface IAppUtils {
 
@@ -167,6 +168,17 @@ public interface IAppUtils {
 	 * @return						the set of default params
 	 */
 	public Vector<String> getDefaultParamsDTSIM(String pSimPath, String pSimName, String pFileName);
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the script files from the specified directory
+	 * 
+	 * @param		pPath					the directory where remove files
+	 * @throw		OpnetHeavyException		If errors during the rm command
+	 * 
+	 */
+	public void removeScriptFiles(String pPath) throws OpnetHeavyException;
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	

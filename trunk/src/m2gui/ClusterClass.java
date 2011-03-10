@@ -33,7 +33,7 @@ public abstract class ClusterClass {
 	//static labels
 	static final String		LABEL_LOAD_PRJ		= "Load project";				//load project label
 	static final String		LABEL_LOAD_EF		= "Load file list";				//load ef file list label
-	static final String		LABEL_CHECK_OP_VER	= "OPNET Version";				//check opnet version
+	static final String		LABEL_CHECK_OP_VER	= "Check version";				//check opnet version
 	static final String		LABEL_RUN_MKSIM		= "Run op_mksim";				//run op_mksim label
 	static final String		LABEL_SUBMIT_SIM	= "Submit sim jobs";			//submit jobs label
 	static final String		LABEL_QSTAT			= "Monitor queue";				//qstat label
@@ -45,10 +45,10 @@ public abstract class ClusterClass {
 	static final int 		STEP_5_MONITOR_JOBS	= 4;							//step 5: monitor simulation on queue
 	//tabbed pane titles
 	static final String		TAB_1_PRJ			= "OPNET Project";				//tab 1: opnet project
-	static final String		TAB_2_EF			= "File list (*.ef)";			//tab 2: ef file list
-	static final String		TAB_3_MKSIM			= "Setup op_mksim";				//tab 3: params op_mksim
-	static final String		TAB_4_SIM			= "Setup sim jobs";				//tab 4: params sim files
-	static final String		TAB_5_ABOUT			= "? ";							//tab 5: about/help
+	static final String		TAB_2_EF			= "Environmental files";		//tab 2: ef file list
+	static final String		TAB_3_MKSIM			= "Config op_mksim";			//tab 3: params op_mksim
+	static final String		TAB_4_SIM			= "Config sim jobs";			//tab 4: params sim files
+	static final String		TAB_5_ABOUT			= "Preferences ";				//tab 5: prefs/help
 	//system output text area identifier
 	static final int		TX_STDOUT			= 0;							//normal output
 	static final int		TX_STDERR			= 1;							//error output

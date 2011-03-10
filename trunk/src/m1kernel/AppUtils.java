@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 //interfaces
+import m1kernel.exceptions.OpnetHeavyException;
 import m1kernel.interfaces.IAppUtils;
 import m1kernel.interfaces.ISysUtils;
 
@@ -24,7 +25,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0225
+ * @version		2011.0310
  */
 public class AppUtils implements IAppUtils {
 
@@ -33,18 +34,20 @@ public class AppUtils implements IAppUtils {
 	Attributes
 	==================================================================================================================
 	*/
-	private ISysUtils						sysUtils				= null;				//system utilities class
-	private String							className				= "unknown";		//to store the name of the class
-	private String 							lineBreak				= "";				//system line separator
-	private String							userHome				= "";				//user dir property
-	private String							fileSeparator			= "/";				//system file separator
-	private Vector<String>					efFileList				= null;				//list of ef files
-	private Vector<String>					badFileList				= null;				//list of not valid ef files
-	private Vector<String>					networkNames			= null;				//list of network names
-	private Vector<String>					uniqueNetworkNames		= null;				//list of unique network names
-	private String[][]						parsedNetworkNames		= null;				//list of parsed network names	
-	private HashMap<String,Vector<String>>	efFilesByNetworkNames	= null;				//list of ef files by network names
-	private StringBuffer					efContents				= null;				//ef file content
+	private ISysUtils						sysUtils				= null;					//system utilities class
+	private String							className				= "unknown";			//to store the name of the class
+	private String 							lineBreak				= "";					//system line separator
+	private String							userHome				= "";					//user dir property
+	private String							fileSeparator			= "/";					//system file separator
+	private String							jobScrFileBaseName		= "job_script_";		//job script base name
+	private String							bashScrFileName			= "aux_script_file.sh";	//bash script file name
+	private Vector<String>					efFileList				= null;					//list of ef files
+	private Vector<String>					badFileList				= null;					//list of not valid ef files
+	private Vector<String>					networkNames			= null;					//list of network names
+	private Vector<String>					uniqueNetworkNames		= null;					//list of unique network names
+	private String[][]						parsedNetworkNames		= null;					//list of parsed network names	
+	private HashMap<String,Vector<String>>	efFilesByNetworkNames	= null;					//list of ef files by network names
+	private StringBuffer					efContents				= null;					//ef file content
 	//logic control attributes
 	private boolean							removeAuxFiles			= true;				
 	
@@ -963,6 +966,49 @@ public class AppUtils implements IAppUtils {
 		
 	} // End String streamHandler
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the script files from the specified directory
+	 * 
+	 * @param		pPath					the directory where remove files
+	 * @throw		OpnetHeavyException		If errors during the rm command
+	 * 
+	 */
+	public void removeScriptFiles(String pPath) throws OpnetHeavyException {
+		
+		//avoid null pointer exception
+		if (pPath == null){ 
+			throw new OpnetHeavyException("Unable to remove the script files: path == null");
+		}
+		
+		//local attributes
+		ConsoleJob		output	= null;
+		String			okPath	= pPath;
+		
+		//check the path end char
+		if (!okPath.endsWith(this.fileSeparator)){
+			//fix the path ending
+			okPath					= okPath + this.fileSeparator;
+		}
+		
+		//run the command rm * path/script*.sh
+		try {
+			output				= this.runCommand("rm", okPath + this.jobScrFileBaseName + "*.sh");
+			
+			//get the arch
+			if (output.stderrActive()){
+				throw new OpnetHeavyException(output.getStderr());
+			}
+			
+		} catch (Exception e) {
+			throw new OpnetHeavyException(e.getMessage());
+		}
+		
+	} // End void removeScriptFiles
+		
+	/* ------------------------------------------------------------------------------------------------------------ */
+
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* OTHER METHODS: ADDITIONAL METHODS																			*/
@@ -1108,7 +1154,7 @@ public class AppUtils implements IAppUtils {
 		fileDir							= this.sysUtils.getLog_file_dir();		
 				
 		//create the new bash script file
-		bashFile		 				= new File(fileDir, "aux_script_file.sh");		
+		bashFile		 				= new File(fileDir, this.bashScrFileName);		
 		
 		//load the full file name
 		fullFileName					= bashFile.getAbsolutePath();
@@ -1212,7 +1258,7 @@ public class AppUtils implements IAppUtils {
 		}
 				
 		//create the new bash script file
-		bashFile		 				= new File(fileDir, "job_script_" + pId + ".sh");		
+		bashFile		 				= new File(fileDir, this.jobScrFileBaseName + pId + ".sh");		
 		
 		//load the full file name
 		fullFileName					= bashFile.getAbsolutePath();

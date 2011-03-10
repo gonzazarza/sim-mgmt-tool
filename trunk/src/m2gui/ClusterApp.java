@@ -1,13 +1,11 @@
 package m2gui;
 
 //awt classes
-import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 //swing classes
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -28,8 +26,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 //util classes
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
@@ -45,6 +45,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -64,7 +66,7 @@ import m1kernel.interfaces.ISysUtils;
  * Main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0306
+ * @version		2011.0310
  */
 public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener, DocumentListener {
  
@@ -90,6 +92,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bRunMKSIM				= null;							//run op_mksim command
 	private JButton						bSubmitSims				= null;							//submit sim to queue
 	private JButton						bAppOutputClear			= null;							//app info output clear button
+	private JButton						bAppOutputSave			= null;							//app info output save button
 	private JFileChooser				dFileChooser			= null;							//load file dialog
 	private JTextArea					txAppOutput				= null;							//app info output
 	private String[][]					s1StatusData			= null;							//step 1 app status data container
@@ -101,10 +104,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private String[][]					s3StatusData			= null;							//step 3 app status data container
 	private JTable						s3StatusTable			= null;							//step 3 grid for the system props
 	private PropsTableModel				s3StatusModel			= null;							//step 3 default table model
-	private JComboBox					cbOpnetVersion			= null;							//opnet version combobox
-	private JTextField					tfSimLicNumber			= null;							//opnet licenses number field
-	private JTextField					tfSimPriority			= null;							//simulation priority value field
-	private JTextField					tfSimQueue				= null;							//simulation queue name field
 	//--- panel: load ef files
 	private JPanel						pFileList				= null;							//ef file list panel
 	private JCheckBox					ckSelectAll				= null;							//select all checkbox
@@ -134,9 +133,16 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JTextArea					txDTSIMHelp				= null;							//sim file help
 	private final String				simsListHeader			= " * Select the sim job *";	//sim files cb header
 	private final String				simsListEmpty			= " * No sim job selected *";	//sim files cb empty item
-	//--- panel: help
-	private JPanel						pHelp					= null;							//help panel
-	
+	//--- panel: prefs/help
+	private JPanel						pPrefs					= null;							//help panel
+	private JComboBox					cbOpnetVersion			= null;							//opnet version combobox
+	private JTextField					tfSimLicNumber			= null;							//opnet licenses number field
+	private JTextField					tfSimPriority			= null;							//simulation priority value field
+	private JTextField					tfSimQueue				= null;							//simulation queue name field
+	private JButton						bSimOutDir				= null;							//simulation output dir
+	private JButton						bSimErrDir				= null;							//simulation error dir
+	private JButton						bSimScrDir				= null;							//simulation scripts dir
+	private JButton						bRemoveScrFiles			= null;							//utilities remove scripts
 	
 	/*	
 	================================================================================================================== 
@@ -186,7 +192,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//initialize main jpanel
 		this.mainPanel				= new JPanel();		
-		this.mainPanel.setLayout(new BorderLayout());
+		this.mainPanel.setLayout(new BoxLayout(this.mainPanel, BoxLayout.PAGE_AXIS));
 		
 		//set the tabbed pane
 		this.setTabbedPane();
@@ -195,7 +201,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.mainPanel.add(this.tabbedPane);
 
 		//initial diasble/enable gui components
-//		this.initGUILook();		//TODO
+		this.initGUILook();
 		
 	} // End void initComponents
 
@@ -229,9 +235,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.setPanelDTSim();
 		this.tabbedPane.add(ClusterApp.TAB_4_SIM, 	this.pDTSIM);				// TO BE FINISHED!
 				
-		//add about/help panel
-		this.setPanelHelp();
-		this.tabbedPane.add(ClusterApp.TAB_5_ABOUT,	this.pHelp);				//TO BE DEFINED!
+		//add prefs/help panel
+		this.setPanelPrefs();
+		this.tabbedPane.add(ClusterApp.TAB_5_ABOUT,	this.pPrefs);				//TO BE DEFINED!
 		
 	} // End void setTabbedPane
 	
@@ -243,48 +249,29 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 * Set the project panel 
 	 */
 	private void setPanelProject(){		
-		
-		// look and feel info (DEPRECATED!)
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 5, 5, 5
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5
-		//		* layout:		boxlayout (x_axis or y_axis)
-		
+			
 		//initialize panel
 		this.pProject						= new JPanel();
 		
-		//set border and layout
-		this.pProject.setLayout(new GridBagLayout());
+		//local attributes
+		int					buttonWidth		= 300;
+		int					buttonHeight	= 25;
+		int					strutVer		= 10;
+		int					strutHor		= 50;
+		
+		//set border and layout		
+		this.pProject.setLayout(new BoxLayout(this.pProject, BoxLayout.PAGE_AXIS));
 		this.pProject.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pProject.add(this.setPanelExtra(" Commands"));
+		this.pProject.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: step 1, select project file
 		//-----------------------------------------------------------------------------------------------
-		JPanel				ppStep1			= new JPanel();
-		GridBagConstraints	cpStep1			= new GridBagConstraints();
-		//--- set border and layout
-		ppStep1.setLayout(new BoxLayout(ppStep1, BoxLayout.Y_AXIS));
-		ppStep1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));		
-		//--- set position
-		cpStep1.gridx						= 0;
-		cpStep1.gridy						= 0;
-		cpStep1.gridwidth					= 1;
-		cpStep1.gridheight					= 1;
-		cpStep1.fill						= GridBagConstraints.HORIZONTAL;
-		this.pProject.add(ppStep1, cpStep1);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-//		ppStep1.add(this.setPanelExtra(" Step 1:  Select project file"));
-		
-		ppStep1.add(this.setPanelExtra(" Application steps"));
-		ppStep1.add(Box.createVerticalStrut(10));
-		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp1Row1			= new JPanel();	
@@ -294,9 +281,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.dFileChooser.setFileFilter(new FileNameExtensionFilter("Opnet project file (*.prj)","prj"));
 		this.dFileChooser.setMultiSelectionEnabled(false);
 		this.bBrowse.addActionListener(this);	
-		
-		this.bBrowse.setPreferredSize(new Dimension(300, 25));
-		
+		//------ configure components
+		this.bBrowse.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
 		//------ set border and layout
 		pp1Row1.setLayout(new BoxLayout(pp1Row1, BoxLayout.X_AXIS));
 		pp1Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -304,7 +290,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pp1Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
 		pp1Row1.add(this.bBrowse);		
-		pp1Row1.add(Box.createHorizontalStrut(30));
+		pp1Row1.add(Box.createHorizontalStrut(strutHor));
 		pp1Row1.add(Box.createHorizontalGlue());
 		//------ set status data	
 		this.s1StatusData					= new String[2][2];
@@ -328,39 +314,22 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					JOptionPane.ERROR_MESSAGE);
 		}
 		//------ add panel
-		ppStep1.add(pp1Row1);	
+		this.pProject.add(pp1Row1);	
 		//-----------------------------------------------------------------------------------------------
 		//--- set bottom space
 		//-----------------------------------------------------------------------------------------------
-		ppStep1.add(Box.createVerticalStrut(10));
+		this.pProject.add(Box.createVerticalStrut(strutVer));
+		
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: step 2, run op_mksim
-		//-----------------------------------------------------------------------------------------------
-		JPanel				ppStep2			= new JPanel();
-		GridBagConstraints	cpStep2			= new GridBagConstraints();
-		//--- set border and layout
-		ppStep2.setLayout(new BoxLayout(ppStep2, BoxLayout.Y_AXIS));
-		ppStep2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- set position
-		cpStep2.gridx						= 0;
-		cpStep2.gridy						= 1;
-		cpStep2.gridwidth					= 1;
-		cpStep2.gridheight					= 1;
-		cpStep2.fill						= GridBagConstraints.HORIZONTAL;
-		this.pProject.add(ppStep2, cpStep2);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-//		ppStep2.add(this.setPanelExtra(" Step 2:  Run op_mksim"));
 		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp2Row1			= new JPanel();	
 		this.bRunMKSIM						= new JButton("Step 2:  op_mksim command");
-		
-		this.bRunMKSIM.setPreferredSize(new Dimension(300, 25));
-		
+		//------ configure components
+		this.bRunMKSIM.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
 		//------ set border and layout
 		pp2Row1.setLayout(new BoxLayout(pp2Row1, BoxLayout.X_AXIS));
 		pp2Row1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -370,7 +339,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.bRunMKSIM.addActionListener(this);
 		//------ add components
 		pp2Row1.add(this.bRunMKSIM);
-		pp2Row1.add(Box.createHorizontalStrut(30));
+		pp2Row1.add(Box.createHorizontalStrut(strutHor));
 		pp2Row1.add(Box.createHorizontalGlue());
 		//------ set status data	
 		this.s2StatusData					= new String[2][2];
@@ -394,66 +363,22 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					JOptionPane.ERROR_MESSAGE);
 		}
 		//------ add panel
-		ppStep2.add(pp2Row1);		
+		this.pProject.add(pp2Row1);		
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: run options list
+		//------ set bottom space
 		//-----------------------------------------------------------------------------------------------
-//		JPanel				pp2Row2			= new JPanel();
-//		JLabel				lOpVer			= new JLabel("OPNET Version:");
-//		this.cbOpnetVersion					= new JComboBox();
-//		//------ configure components
-//		//--------- combobox
-//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
-//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_5);
-//		this.cbOpnetVersion.addItem(IAppUtils.OPNET_16_0);
-//		this.cbOpnetVersion.setEditable(false);
-//		this.cbOpnetVersion.setEnabled(false);
-//		//--------- labels
-//		lOpVer.setFont(new Font(lOpVer.getFont().getFamily(), Font.PLAIN, 12));
-//		//------ set border and layout
-//		pp2Row2.setLayout(new FlowLayout(FlowLayout.LEFT));
-//		pp2Row2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-//		//------ set background color
-//		pp2Row2.setBackground(IAppUtils.COLOR_NOT_APPLIED);
-//		//------ add components
-//		pp2Row2.add(lOpVer);
-//		pp2Row2.add(Box.createRigidArea(new Dimension(05, 0)));
-//		pp2Row2.add(this.cbOpnetVersion);
-//		//------ add panel
-//		ppStep2.add(pp2Row2);
-		//-----------------------------------------------------------------------------------------------
-		//--- set bottom space
-		//-----------------------------------------------------------------------------------------------
-		ppStep2.add(Box.createVerticalStrut(10));
+		this.pProject.add(Box.createVerticalStrut(strutVer));
 		
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: step 3, submit simulations to queue
 		//-----------------------------------------------------------------------------------------------
-		JPanel				ppStep3			= new JPanel();
-		GridBagConstraints	cpStep3			= new GridBagConstraints();
-		//--- set border and layout
-		ppStep3.setLayout(new BoxLayout(ppStep3, BoxLayout.Y_AXIS));
-		ppStep3.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));		
-		//--- set position
-		cpStep3.gridx						= 0;
-		cpStep3.gridy						= 2;
-		cpStep3.gridwidth					= 1;
-		cpStep3.gridheight					= 1;
-		cpStep3.fill						= GridBagConstraints.HORIZONTAL;
-		this.pProject.add(ppStep3, cpStep3);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-//		ppStep3.add(this.setPanelExtra(" Step 3:  Submit jobs"));
-		//-----------------------------------------------------------------------------------------------		
 		//--- set row 1: components and status
 		//-----------------------------------------------------------------------------------------------
 		JPanel				pp3Row2			= new JPanel();	
 		this.bSubmitSims					= new JButton("Step 3:  Submit simulations");
-
-		this.bSubmitSims.setPreferredSize(new Dimension(300, 25));
-		
+		//------ configure components
+		this.bSubmitSims.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
 		//------ set border and layout
 		pp3Row2.setLayout(new BoxLayout(pp3Row2, BoxLayout.X_AXIS));
 		pp3Row2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
@@ -463,7 +388,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.bSubmitSims.addActionListener(this);
 		//------ add components
 		pp3Row2.add(this.bSubmitSims);		
-		pp3Row2.add(Box.createHorizontalStrut(30));
+		pp3Row2.add(Box.createHorizontalStrut(strutVer));
 		pp3Row2.add(Box.createHorizontalGlue());
 		//------ set status data	
 		this.s3StatusData					= new String[2][2];
@@ -487,113 +412,63 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					JOptionPane.ERROR_MESSAGE);
 		}
 		//------ add panel
-		ppStep3.add(pp3Row2);	
+		this.pProject.add(pp3Row2);	
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: submit options list
+		//------ set bottom space
 		//-----------------------------------------------------------------------------------------------
-//		JPanel				pp3Row1			= new JPanel();
-//		JLabel				lSimQueue		= new JLabel("Queue:");
-//		JLabel				lSimLicNumber	= new JLabel("Licences:");
-//		JLabel				lSimPriority	= new JLabel("Priority:");
-//		this.tfSimQueue						= new JTextField("cluster.q", 	10);
-//		this.tfSimPriority					= new JTextField("0", 			10);
-//		this.tfSimLicNumber					= new JTextField("1", 			10);
-//		//------ configure components
-//		//--------- queue 
-//		this.tfSimQueue.setEnabled(true);
-//		this.tfSimQueue.setEditable(false);
-//		this.tfSimQueue.setHorizontalAlignment(JTextField.RIGHT);
-//		this.tfSimQueue.setFont(new Font(this.tfSimQueue.getFont().getFamily(), Font.PLAIN, 12));
-//		//--------- licenses number
-//		this.tfSimLicNumber.setEnabled(true);
-//		this.tfSimLicNumber.setEditable(false);
-//		this.tfSimLicNumber.setHorizontalAlignment(JTextField.RIGHT);
-//		this.tfSimLicNumber.setFont(new Font(this.tfSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
-//		//--------- job priority
-//		this.tfSimPriority.setEnabled(true);
-//		this.tfSimPriority.setEditable(true);
-//		this.tfSimPriority.setHorizontalAlignment(JTextField.RIGHT);
-//		this.tfSimPriority.setFont(new Font(this.tfSimPriority.getFont().getFamily(), Font.PLAIN, 12));
-//		//--------- labels
-//		lSimQueue.setFont(new Font(lSimQueue.getFont().getFamily(), Font.PLAIN, 12));
-//		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
-//		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
-//		//------ set border and layout
-////		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.X_AXIS));
-//		pp3Row1.setLayout(new FlowLayout(FlowLayout.LEFT));
-//		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-//		//------ set background color
-//		pp3Row1.setBackground(IAppUtils.COLOR_NOT_APPLIED);
-//		//------ add components
-//		pp3Row1.add(lSimQueue);
-//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-//		pp3Row1.add(this.tfSimQueue);
-//		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-//		pp3Row1.add(lSimLicNumber);
-//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-//		pp3Row1.add(this.tfSimLicNumber);
-//		pp3Row1.add(Box.createRigidArea(new Dimension(20, 0)));
-//		pp3Row1.add(lSimPriority);
-//		pp3Row1.add(Box.createRigidArea(new Dimension(05, 0)));
-//		pp3Row1.add(this.tfSimPriority);
-//		//------ add panel
-//		ppStep3.add(pp3Row1);
-		//-----------------------------------------------------------------------------------------------
-		//--- set bottom space
-		//-----------------------------------------------------------------------------------------------
-		ppStep3.add(Box.createVerticalStrut(20));						
+		this.pProject.add(Box.createVerticalStrut(strutVer*3));						
+		
 		
 		//-----------------------------------------------------------------------------------------------
-		//set panel: output
+		//set title and space
 		//-----------------------------------------------------------------------------------------------
-		JPanel				ppOutput		= new JPanel();
-		GridBagConstraints	cpOutput		= new GridBagConstraints();
-		//--- set border and layout
-		ppOutput.setLayout(new BoxLayout(ppOutput, BoxLayout.Y_AXIS));
-		ppOutput.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- set position
-		cpOutput.gridx						= 0;
-		cpOutput.gridy						= 3;
-		cpOutput.gridwidth					= 1;
-		cpOutput.gridheight					= 1;
-		cpOutput.fill						= GridBagConstraints.HORIZONTAL;		
-		this.pProject.add(ppOutput, cpOutput);	
+		this.pProject.add(this.setPanelExtra(" Output"));
+		this.pProject.add(Box.createVerticalStrut(5));		
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		ppOutput.add(this.setPanelExtra(" General output"));
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: output text area
+		//--- set panel: output
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow1			= new JPanel();
 		String				userPrompt		= " No output";
-		this.txAppOutput					= new JTextArea(userPrompt, 25, 65);
+		this.txAppOutput					= new JTextArea(userPrompt, 25, 70);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
-		
+		//------- configure components 
 		this.txAppOutput.setBackground(IAppUtils.COLOR_COMPONENTS);
-		
+		this.txAppOutput.setFont(new Font(this.txAppOutput.getFont().getFamily(), Font.ITALIC, 12));
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
 		ppoRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ add components
 		ppoRow1.add(outputScroll);
 		//------ add panel
-		ppOutput.add(ppoRow1);
+		this.pProject.add(ppoRow1);
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: output buttons
+		//--- set clear and save buttons
 		//-----------------------------------------------------------------------------------------------
 		JPanel				ppoRow2			= new JPanel();
 		this.bAppOutputClear				= new JButton("Clear output");
+		this.bAppOutputSave					= new JButton("Save to file");
 		//------ add listeners
 		this.bAppOutputClear.addActionListener(this);
+		this.bAppOutputSave.addActionListener(this);
 		//------ set border and layout
 		ppoRow2.setLayout(new BoxLayout(ppoRow2, BoxLayout.X_AXIS));
 		ppoRow2.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+		//------ set background color
+		ppoRow2.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
 		ppoRow2.add(Box.createHorizontalGlue());
+		ppoRow2.add(this.bAppOutputSave);
+		ppoRow2.add(Box.createHorizontalStrut(5));
 		ppoRow2.add(this.bAppOutputClear);
+		ppoRow2.add(Box.createHorizontalStrut(5));
 		//------ add panel
-		ppOutput.add(ppoRow2);
+		this.pProject.add(ppoRow2);
+
+		//-----------------------------------------------------------------------------------------------
+		//------ set bottom glue
+		//-----------------------------------------------------------------------------------------------
+		this.pProject.add(Box.createVerticalGlue());
+		this.pProject.add(Box.createVerticalStrut(5));						
 		
 		
 	} // End void setProjectPanel	
@@ -605,24 +480,21 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 */
 	private void setPanelFileList(){
 				
-		// look and feel info
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5 
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		
-		
 		//initialize the panel
 		this.pFileList						= new JPanel();
 		
+		//local attributes
+		int					strutHor		= 50;
+		
 		//set border and layout
-		this.pFileList.setLayout(new BoxLayout(this.pFileList, BoxLayout.Y_AXIS));
+		this.pFileList.setLayout(new BoxLayout(this.pFileList, BoxLayout.PAGE_AXIS));
 		this.pFileList.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pFileList.add(this.setPanelExtra(" Supplementary environment files"));
+		this.pFileList.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: files list
@@ -631,22 +503,24 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set border and layout
 		pfList.setLayout(new BoxLayout(pfList, BoxLayout.Y_AXIS));
 		pfList.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//--- set background color
+		
+		pfList.setAlignmentY(JPanel.TOP_ALIGNMENT);
+		
+		pfList.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//--- add panel
 		this.pFileList.add(pfList);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		pfList.add(this.setPanelExtra(" Supplementary environment files"));
-		pfList.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: file grid
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pfiRow1				= new JPanel();
 		//------ set border and layout
 		pfiRow1.setLayout(new BoxLayout(pfiRow1, BoxLayout.X_AXIS));
-		pfiRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));		
+		pfiRow1.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));		
 		//------ create components		
 		boolean			status				= this.initTable(ClusterApp.TABLE_FILES, null);
+		//------ configure components
+		this.filesTable.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components 
 		if (status == true){
 			pfiRow1.add(this.filesScroll);
@@ -661,35 +535,46 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//------ add panel
 		pfList.add(pfiRow1);		
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: files info + buttons
+		//--- set row 2: files info + checkboxes
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pfiRow2				= new JPanel();
 		//------ set border and layout
 		pfiRow2.setLayout(new BoxLayout(pfiRow2, BoxLayout.X_AXIS));
-		pfiRow2.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		pfiRow2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		//------ set background color
+		pfiRow2.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ create components
 		this.ckSelectAll					= new JCheckBox("Select all");
 		this.ckSelectNone					= new JCheckBox("Clear selection");
 		this.filesLabel						= new JLabel("");
 		this.initFilesSelectedInfo();
+		//------ configure components
+		this.ckSelectAll.setBackground(IAppUtils.COLOR_COMPONENTS);
+		this.ckSelectNone.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ set action listeners
 		this.ckSelectAll.addActionListener(this);
 		this.ckSelectNone.addActionListener(this);
 		//------ add components
 		pfiRow2.add(this.ckSelectNone);
-		pfiRow2.add(Box.createHorizontalStrut(5));
+		pfiRow2.add(Box.createHorizontalStrut(10));
 		pfiRow2.add(this.ckSelectAll);
-		pfiRow2.add(Box.createRigidArea(new Dimension(5,0)));
+		pfiRow2.add(Box.createHorizontalStrut(strutHor));
 		pfiRow2.add(Box.createHorizontalGlue());
 		pfiRow2.add(this.filesLabel);				
-		pfiRow2.add(Box.createVerticalStrut(30));
+		pfiRow2.add(Box.createHorizontalStrut(5));
 		//------ add panel
-		pfList.add(pfiRow2);			
+		pfList.add(pfiRow2);
 		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
+		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		pfList.add(Box.createVerticalGlue());
-				
+		this.pFileList.add(Box.createVerticalStrut(30));
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pFileList.add(this.setPanelExtra(" File content"));
+		this.pFileList.add(Box.createVerticalStrut(10));
+			
 		//-----------------------------------------------------------------------------------------------
 		//set panel: file content
 		//-----------------------------------------------------------------------------------------------
@@ -700,11 +585,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- add panel
 		this.pFileList.add(pfOutput);
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		pfOutput.add(this.setPanelExtra(" File content"));
-		pfOutput.add(Box.createVerticalStrut(10));
-		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: content
 		//-----------------------------------------------------------------------------------------------
 		//------ create components
@@ -712,12 +592,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		JScrollPane		contentScroll		= new JScrollPane(this.txFileContent);
 		Font 			contentFont			= this.txFileContent.getFont();		
 		//------ tune components
+		this.txFileContent.setBackground(IAppUtils.COLOR_COMPONENTS);
 		this.txFileContent.setEditable(false);
 		this.txFileContent.setLineWrap(true);
 		this.txFileContent.setFont(new Font(contentFont.getFamily(), Font.ITALIC, 12));
 		//------ add components
 		pfOutput.add(contentScroll);		
 						
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pFileList.add(Box.createVerticalGlue());
+		this.pFileList.add(Box.createRigidArea(new Dimension(5,5)));
+		
+		
 	} // End void setFileLIstPanel 
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -726,113 +614,107 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 * Set the op_mksim panel 
 	 */
 	private void setPanelMKSim(){
-		
-		// look and feel info
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5 
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		
+				
 		//initialize panel
 		this.pMKSIM							= new JPanel();
 		
+		//local attributes
+		int					comboWidth		= 500;
+		int					comboHeight		= 25;
+		int					buttonWidth		= 100;
+		int					buttonHeight	= 25;
+		int					strutVer		= 10;
+		int					strutHor		= 50;
+		
 		//set border and layout
-		this.pMKSIM.setLayout(new BoxLayout(this.pMKSIM, BoxLayout.Y_AXIS));
+		this.pMKSIM.setLayout(new BoxLayout(this.pMKSIM, BoxLayout.PAGE_AXIS));
 		this.pMKSIM.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		
 		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pMKSIM.add(this.setPanelExtra(" Selected networks (environmental files)"));
+		this.pMKSIM.add(Box.createVerticalStrut(10));
+				
+		//-----------------------------------------------------------------------------------------------
 		//set panel: net names info
-		//-----------------------------------------------------------------------------------------------
-		JPanel			pmNetInfo			= new JPanel();
-		//--- set border and layout
-		pmNetInfo.setLayout(new BoxLayout(pmNetInfo, BoxLayout.Y_AXIS));
-		pmNetInfo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- add panel
-		this.pMKSIM.add(pmNetInfo);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(this.setPanelExtra(" Included networks (environmental files)"));
-		pmNetInfo.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: title and space
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pmpRow1				= new JPanel();	
 		//------ set border and layout
 		pmpRow1.setLayout(new BoxLayout(pmpRow1, BoxLayout.X_AXIS));
-		pmpRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+		pmpRow1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		//------ set background color
+		pmpRow1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ create components
 		this.cbNetsList						= new JComboBox();
 		this.bNetsSave						= new JButton("Save");
 		this.bNetsReset						= new JButton("Discard");
 		//------ setup components
-		this.cbNetsList.setMinimumSize(new Dimension(500,25));
-		this.cbNetsList.setPreferredSize(new Dimension(500,25));
-		this.cbNetsList.setMaximumSize(new Dimension(500,25));
+		this.bNetsReset.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bNetsSave.setPreferredSize(new Dimension (buttonWidth, buttonHeight));
+		this.cbNetsList.setPreferredSize(new Dimension(comboWidth, comboHeight));
 		//------ add listeners
 		this.cbNetsList.addActionListener(this);
 		this.bNetsSave.addActionListener(this);
 		this.bNetsReset.addActionListener(this);
 		//------ add components
 		pmpRow1.add(this.cbNetsList);
+		pmpRow1.add(Box.createHorizontalStrut(strutHor));
 		pmpRow1.add(Box.createHorizontalGlue());
 		pmpRow1.add(this.bNetsSave);
 		pmpRow1.add(Box.createHorizontalStrut(5));
 		pmpRow1.add(this.bNetsReset);
 		//------ add panel
-		pmNetInfo.add(pmpRow1);
+		this.pMKSIM.add(pmpRow1);
 		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
+		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(Box.createVerticalGlue());	
-		pmNetInfo.add(Box.createVerticalStrut(30));	
+		this.pMKSIM.add(Box.createVerticalStrut(strutVer*3));
+		
+		
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 2: title and space
+		//set title and space
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(this.setPanelExtra(" op_mksim command params"));
+		this.pMKSIM.add(this.setPanelExtra(" Params op_mksim command"));
+		this.pMKSIM.add(Box.createVerticalStrut(10));
+		
 		//-----------------------------------------------------------------------------------------------
-		//--- set row 3: info text area
+		//set panel: info text area
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pmpRow3				= new JPanel();
 		//------ set border and layout 
 		pmpRow3.setLayout(new BoxLayout(pmpRow3, BoxLayout.X_AXIS));
 		pmpRow3.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txMKSIMParams					= new JTextArea("", 12, 60);
+		this.txMKSIMParams					= new JTextArea("", 15, 60);
 		this.deMKSIMParams					= this.txMKSIMParams.getDocument();
 		JScrollPane		paramsScroll		= new JScrollPane(this.txMKSIMParams);
 		this.txMKSIMParams.setEditable(true);
 		this.txMKSIMParams.setLineWrap(true);
+		//------ set background color
+		this.txMKSIMParams.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add listeners
 		this.deMKSIMParams.addDocumentListener(this);
 		//------ add components
 		pmpRow3.add(paramsScroll);
 		//------ add panel
-		pmNetInfo.add(pmpRow3);
+		this.pMKSIM.add(pmpRow3);
 		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
+		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		pmNetInfo.add(Box.createVerticalStrut(30));
-		pmNetInfo.add(Box.createVerticalGlue());
+		this.pMKSIM.add(Box.createVerticalStrut(strutVer*3));
+				
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pMKSIM.add(this.setPanelExtra(" Help op_mksim command)"));
+		this.pMKSIM.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: op_mksim help pane
-		//-----------------------------------------------------------------------------------------------
-		JPanel			pmHelp			= new JPanel();
-		//------ set border and layout
-		pmHelp.setLayout(new BoxLayout(pmHelp, BoxLayout.Y_AXIS));
-		pmHelp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//------ add panel
-		pmNetInfo.add(pmHelp);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		pmHelp.add(this.setPanelExtra(" Help op_mksim command"));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: help text area
 		//-----------------------------------------------------------------------------------------------
@@ -841,7 +723,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pmhRow1.setLayout(new BoxLayout(pmhRow1, BoxLayout.X_AXIS));
 		pmhRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txMKSIMHelp					= new JTextArea("", 12, 60);
+		this.txMKSIMHelp					= new JTextArea("", 15, 60);
 		JScrollPane		helpScroll			= new JScrollPane(this.txMKSIMHelp);
 		Font			helpFont			= this.txMKSIMHelp.getFont();
 		this.txMKSIMHelp.setEditable(false);
@@ -857,10 +739,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//log the error
 			this.sysUtils.printlnErr(e.getMessage(), this.className + ", setMK_SIMPanel");
 		}
+		//------ set background color
+		this.txMKSIMHelp.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
 		pmhRow1.add(helpScroll);	
 		//------ add panel
-		pmNetInfo.add(pmhRow1);
+		this.pMKSIM.add(pmhRow1);
 		
 		
 	} // End void setMK_SIMPanel
@@ -871,142 +755,126 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	 * Set the sim file panel 
 	 */
 	private void setPanelDTSim(){
-	
-		// look and feel info
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5 
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
 		
 		//initialize panel
 		this.pDTSIM						= new JPanel();
 		
+		//local attributes
+		int					comboWidth		= 500;
+		int					comboHeight		= 25;
+		int					buttonWidth		= 100;
+		int					buttonHeight	= 25;
+		int					strutVer		= 10;
+		int					strutHor		= 50;
+		
 		//set border and layout
-		this.pDTSIM.setLayout(new BoxLayout(this.pDTSIM, BoxLayout.Y_AXIS));
+		this.pDTSIM.setLayout(new BoxLayout(this.pDTSIM, BoxLayout.PAGE_AXIS));
 		this.pDTSIM.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		
 		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pDTSIM.add(this.setPanelExtra(" Simulations to enqueue"));
+		this.pDTSIM.add(Box.createVerticalStrut(10));
+
+		//-----------------------------------------------------------------------------------------------
 		//set panel: sim list
-		//-----------------------------------------------------------------------------------------------
-		JPanel			psList				= new JPanel();
-		//--- set border and layout
-		psList.setLayout(new BoxLayout(psList, BoxLayout.Y_AXIS));
-		psList.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- add panel
-		this.pDTSIM.add(psList);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		psList.add(this.setPanelExtra(" Simulation jobs to send"));
-		psList.add(Box.createVerticalStrut(10));
 		//-----------------------------------------------------------------------------------------------
 		//--- set row 1: sim combo box
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pslCombo			= new JPanel();
 		//------ set border and layout
 		pslCombo.setLayout(new BoxLayout(pslCombo, BoxLayout.X_AXIS));
-		pslCombo.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+		pslCombo.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		//------ create components
 		this.cbSimsList						= new JComboBox();
 		this.bSimsSave						= new JButton("Save");
 		this.bSimsReset						= new JButton("Discard");
 		//------ setup components
-		this.cbSimsList.setMinimumSize(new Dimension(500,25));
-		this.cbSimsList.setPreferredSize(new Dimension(500,25));
-		this.cbSimsList.setMaximumSize(new Dimension(500,25));		
+		this.bSimsReset.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bSimsSave.setPreferredSize(new Dimension (buttonWidth, buttonHeight));
+		this.cbSimsList.setPreferredSize(new Dimension(comboWidth, comboHeight));
+		this.cbSimsList.setMinimumSize(new Dimension(comboWidth, comboHeight));
+		this.cbSimsList.setMaximumSize(new Dimension(comboWidth, comboHeight));
+		//------ set background color
+		pslCombo.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add listeners
 		this.cbSimsList.addActionListener(this);
 		this.bSimsSave.addActionListener(this);
 		this.bSimsReset.addActionListener(this);
 		//------ add components
 		pslCombo.add(this.cbSimsList);
+		pslCombo.add(Box.createHorizontalStrut(strutHor));
 		pslCombo.add(Box.createHorizontalGlue());
 		pslCombo.add(this.bSimsSave);
 		pslCombo.add(Box.createHorizontalStrut(5));
 		pslCombo.add(this.bSimsReset);
 		//------ add panel
-		psList.add(pslCombo);
+		this.pDTSIM.add(pslCombo);
 		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
+		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		psList.add(Box.createVerticalStrut(30));
-		psList.add(Box.createVerticalGlue());
+		this.pDTSIM.add(Box.createVerticalStrut(strutVer*3));
 		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pDTSIM.add(this.setPanelExtra(" Params simulations"));
+		this.pDTSIM.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: sim file string
-		//-----------------------------------------------------------------------------------------------
-		JPanel			psCode				= new JPanel();		
-		//--- set border and layout
-		psCode.setLayout(new BoxLayout(psCode, BoxLayout.Y_AXIS));
-		psCode.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- add panel
-		this.pDTSIM.add(psCode);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		psCode.add(this.setPanelExtra(" Simulation job params"));
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: sim combo box
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pslCode				= new JPanel();
 		//------ set border and layout
 		pslCode.setLayout(new BoxLayout(pslCode, BoxLayout.X_AXIS));
 		pslCode.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txDTSIMParams					= new JTextArea("", 12, 60);
+		this.txDTSIMParams					= new JTextArea("", 15, 60);
 		this.deDTSIMParams					= this.txDTSIMParams.getDocument();
 		JScrollPane		paramsScroll		= new JScrollPane(this.txDTSIMParams);
 		this.txDTSIMParams.setEditable(true);
 		this.txDTSIMParams.setLineWrap(true);
+		//------ set background color
+		this.txDTSIMParams.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add listeners
 		this.deDTSIMParams.addDocumentListener(this);
 		//------ add components
 		pslCode.add(paramsScroll);
 		//------ add panel
-		psCode.add(pslCode);
+		this.pDTSIM.add(pslCode);
 		//-----------------------------------------------------------------------------------------------
-		//set bottom glue
+		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		psCode.add(Box.createVerticalStrut(30));
-		psCode.add(Box.createVerticalGlue());
+		this.pDTSIM.add(Box.createVerticalStrut(strutVer*3));
 		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pDTSIM.add(this.setPanelExtra(" Help simulations"));
+		this.pDTSIM.add(Box.createVerticalStrut(10));
 		
 		//-----------------------------------------------------------------------------------------------
 		//set panel: sim file help
-		//-----------------------------------------------------------------------------------------------
-		JPanel			psHelp				= new JPanel();		
-		//--- set border and layout
-		psHelp.setLayout(new BoxLayout(psHelp, BoxLayout.Y_AXIS));
-		psHelp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- add panel
-		this.pDTSIM.add(psHelp);
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 0: title and space
-		//-----------------------------------------------------------------------------------------------
-		psHelp.add(this.setPanelExtra(" Help sim files (general)"));
-		//-----------------------------------------------------------------------------------------------
-		//--- set row 1: sim help
 		//-----------------------------------------------------------------------------------------------
 		JPanel			pslHelp				= new JPanel();
 		//------ set border and layout
 		pslHelp.setLayout(new BoxLayout(pslHelp, BoxLayout.X_AXIS));
 		pslHelp.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//------ create components
-		this.txDTSIMHelp					= new JTextArea("", 12, 60);
+		this.txDTSIMHelp					= new JTextArea("", 15, 60);
 		JScrollPane		helpScroll			= new JScrollPane(this.txDTSIMHelp);
 		Font			helpFont			= this.txDTSIMHelp.getFont();
 		this.txDTSIMHelp.setEditable(false);
 		this.txDTSIMHelp.setFont(new Font(helpFont.getFamily(), Font.PLAIN, 10));
+		//------ set background color
+		this.txDTSIMHelp.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ add components
 		pslHelp.add(helpScroll);
 		//------ add panel
-		psHelp.add(pslHelp);
+		this.pDTSIM.add(pslHelp);
 
 		
 	} //End void setDT_SIMPanel
@@ -1016,23 +884,320 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/**
 	 * Set the help panel
 	 */
-	private void setPanelHelp(){
-		
-		// look and feel info
-		// * 1st-level panels:
-		//		* borders:		empty, 5, 5, 5, 5 
-		//		* layout:		not-defined
-		// * 2nd-level panels:	
-		//		* borders: 		empty, 0, 0, 0, 0 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		// * 3rd-level panels:
-		//		* borders:		titled, 5, 5, 5, 5 or 5, 0, 5, 0
-		//		* layout:		boxlayout (x_axis or y_axis)
-		
-		
+	private void setPanelPrefs(){
+				
 		//initialize panel
-		this.pHelp						= new JPanel();
+		this.pPrefs							= new JPanel();
 		
+		//local attributes
+		int					comboWidth		= 200;
+		int					comboHeight		= 25;
+		int					buttonWidth		= 200;
+		int					buttonHeight	= 20;
+		int					labelWidth		= 180;
+		int					labelHeight		= 25;
+		int					txSize			= 15;
+		int					strutVer		= 10;
+		int					strutHor		= 20;
+		
+		//set border and layout
+		this.pPrefs.setLayout(new BoxLayout(this.pPrefs, BoxLayout.PAGE_AXIS));
+		this.pPrefs.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(this.setPanelExtra(" Preferences"));
+		this.pPrefs.add(Box.createVerticalStrut(10));
+		
+		//-----------------------------------------------------------------------------------------------
+		//set panel prefs step 1
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp1Row1			= new JPanel();
+		JPanel				lp1Title		= new JPanel();
+		JLabel				lp1Label		= new JLabel(" Step 1: select project file");
+		//------ set border and layout
+		pp1Row1.setLayout(new BoxLayout(pp1Row1, BoxLayout.Y_AXIS));
+		pp1Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//------ set background color
+		pp1Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ configure components
+		//--------- step title
+		lp1Title.setLayout(new BoxLayout(lp1Title, BoxLayout.X_AXIS));
+		lp1Title.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		lp1Title.setBackground(IAppUtils.COLOR_NOT_APPLIED);
+		lp1Title.add(lp1Label);
+		lp1Title.add(Box.createHorizontalGlue());
+		//------ add components
+		pp1Row1.add(lp1Title);
+		pp1Row1.add(Box.createRigidArea(new Dimension(strutHor, strutVer*5)));
+		//------ add panel
+		this.pPrefs.add(pp1Row1);
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(Box.createVerticalStrut(strutVer));
+		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set panel prefs step 2
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp2Row1			= new JPanel();
+		JPanel				lp2Title		= new JPanel();
+		JPanel				lp2Opts			= new JPanel();
+		JLabel				lp2Label		= new JLabel(" Step 2: op_mksim command");
+		JLabel				lOpVer			= new JLabel("OPNET Version:");
+		this.cbOpnetVersion					= new JComboBox();
+		//------ set border and layout
+		pp2Row1.setLayout(new BoxLayout(pp2Row1, BoxLayout.Y_AXIS));
+		pp2Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//------ set background color
+		pp2Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ configure components
+		//--------- step title
+		lp2Title.setLayout(new BoxLayout(lp2Title, BoxLayout.X_AXIS));
+		lp2Title.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		lp2Title.setBackground(IAppUtils.COLOR_NOT_APPLIED);
+		lp2Title.add(lp2Label);
+		lp2Title.add(Box.createHorizontalGlue());
+		//--------- step options
+		lp2Opts.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp2Opts.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp2Opts.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//--------- combobox
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_5);
+		this.cbOpnetVersion.addItem(IAppUtils.OPNET_16_0);
+		this.cbOpnetVersion.setEditable(false);
+		this.cbOpnetVersion.setEnabled(false);
+		this.cbOpnetVersion.setPreferredSize(new Dimension(comboWidth, comboHeight));
+		//--------- label
+		lOpVer.setFont(new Font(lOpVer.getFont().getFamily(), Font.PLAIN, 12));
+		lOpVer.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		//row0
+		lp2Opts.add(lOpVer);
+		lp2Opts.add(Box.createHorizontalStrut(strutHor));
+		lp2Opts.add(this.cbOpnetVersion);		
+		//------ add components
+		pp2Row1.add(lp2Title);
+		pp2Row1.add(lp2Opts);
+		//------ add panel
+		this.pPrefs.add(pp2Row1);
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(Box.createVerticalStrut(strutVer));
+
+	
+		//-----------------------------------------------------------------------------------------------
+		//set panel prefs step 3
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pp3Row1			= new JPanel();
+		JPanel				lp3Title		= new JPanel();
+		JPanel				lp3Opts1		= new JPanel();
+		JPanel				lp3Opts2		= new JPanel();
+		JPanel				lp3Opts3		= new JPanel();
+		JPanel				lp3Opts4		= new JPanel();
+		JPanel				lp3Opts5		= new JPanel();
+		JPanel				lp3Opts6		= new JPanel();
+		JLabel				lp3Label		= new JLabel(" Step 3: submit simulations");
+		JLabel				lSimQueue		= new JLabel("Queue:");
+		JLabel				lSimLicNumber	= new JLabel("Licences:");
+		JLabel				lSimPriority	= new JLabel("Priority:");
+		JLabel				lSimOutDir		= new JLabel("Output dir:");
+		JLabel				lSimErrDir		= new JLabel("Error dir:");
+		JLabel				lSimScrDir		= new JLabel("Scripts dir:");
+		this.tfSimQueue						= new JTextField("cluster.q", 	txSize);
+		this.tfSimPriority					= new JTextField("0", 			txSize);
+		this.tfSimLicNumber					= new JTextField("1", 			txSize);
+		this.bSimOutDir						= new JButton("Select out dir");
+		this.bSimErrDir						= new JButton("Select error dir");
+		this.bSimScrDir						= new JButton("Select scripts dir");
+		//------ set border and layout
+		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.PAGE_AXIS));
+		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		//------ set background color
+		pp3Row1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ configure components
+		//--------- buttons
+		this.bSimOutDir.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bSimErrDir.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bSimScrDir.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		//--------- queue 
+		this.tfSimQueue.setEnabled(true);
+		this.tfSimQueue.setEditable(false);
+		this.tfSimQueue.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimQueue.setFont(new Font(this.tfSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- licenses number
+		this.tfSimLicNumber.setEnabled(true);
+		this.tfSimLicNumber.setEditable(false);
+		this.tfSimLicNumber.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimLicNumber.setFont(new Font(this.tfSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- job priority
+		this.tfSimPriority.setEnabled(true);
+		this.tfSimPriority.setEditable(true);
+		this.tfSimPriority.setHorizontalAlignment(JTextField.RIGHT);
+		this.tfSimPriority.setFont(new Font(this.tfSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+		//--------- labels
+		lSimQueue.setFont(new Font(lSimQueue.getFont().getFamily(), Font.PLAIN, 12));
+		lSimLicNumber.setFont(new Font(lSimLicNumber.getFont().getFamily(), Font.PLAIN, 12));
+		lSimPriority.setFont(new Font(lSimPriority.getFont().getFamily(), Font.PLAIN, 12));
+		lSimOutDir.setFont(new Font(lSimOutDir.getFont().getFamily(), Font.PLAIN, 12));
+		lSimErrDir.setFont(new Font(lSimErrDir.getFont().getFamily(), Font.PLAIN, 12));
+		lSimScrDir.setFont(new Font(lSimScrDir.getFont().getFamily(), Font.PLAIN, 12));
+		lSimQueue.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lSimLicNumber.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lSimPriority.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lSimOutDir.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lSimErrDir.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lSimScrDir.setPreferredSize(new Dimension(labelWidth, labelHeight));		
+		//--------- step title
+		lp3Title.setLayout(new BoxLayout(lp3Title, BoxLayout.X_AXIS));
+		lp3Title.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		lp3Title.setBackground(IAppUtils.COLOR_NOT_APPLIED);
+		lp3Title.add(lp3Label);
+		lp3Title.add(Box.createHorizontalGlue());
+		//--------- step options
+		//row1
+		lp3Opts1.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts1.add(lSimQueue);
+		lp3Opts1.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts1.add(this.tfSimQueue);
+		//row2
+		lp3Opts2.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts2.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts2.add(lSimLicNumber);
+		lp3Opts2.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts2.add(this.tfSimLicNumber);
+		//row3
+		lp3Opts3.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts3.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts3.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts3.add(lSimPriority);
+		lp3Opts3.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts3.add(this.tfSimPriority);
+		//row4
+		lp3Opts4.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts4.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts4.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts4.add(lSimOutDir);
+		lp3Opts4.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts4.add(this.bSimOutDir);
+		//row5
+		lp3Opts5.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts5.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts5.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts5.add(lSimErrDir);
+		lp3Opts5.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts5.add(this.bSimErrDir);
+		//row6
+		lp3Opts6.setLayout(new FlowLayout(FlowLayout.LEFT));
+		lp3Opts6.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts6.setBackground(IAppUtils.COLOR_COMPONENTS);
+		lp3Opts6.add(lSimScrDir);
+		lp3Opts6.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts6.add(this.bSimScrDir);
+		//------ add components
+		pp3Row1.add(lp3Title);
+		pp3Row1.add(lp3Opts1);
+		pp3Row1.add(lp3Opts2);
+		pp3Row1.add(lp3Opts3);
+		pp3Row1.add(lp3Opts4);
+		pp3Row1.add(lp3Opts5);
+		pp3Row1.add(lp3Opts6);
+		//------ add panel
+		this.pPrefs.add(pp3Row1);
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(Box.createVerticalStrut(strutVer*3));
+		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(this.setPanelExtra(" Utilities"));
+		this.pPrefs.add(Box.createVerticalStrut(10));
+
+		//-----------------------------------------------------------------------------------------------
+		//set panel utilities
+		//-----------------------------------------------------------------------------------------------
+		JPanel				putRow1			= new JPanel();
+		JLabel				lUt1Label		= new JLabel(" Remove old script files: ");
+		this.bRemoveScrFiles				= new JButton("Select target dir");
+		//------ set border and layout
+		putRow1.setLayout(new BoxLayout(putRow1, BoxLayout.X_AXIS));
+		putRow1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		//------ set background color
+		putRow1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ configure components
+		this.bRemoveScrFiles.addActionListener(this);
+		this.bRemoveScrFiles.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		lUt1Label.setFont(new Font(lUt1Label.getFont().getFamily(), Font.PLAIN, 12));
+		lUt1Label.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		//------ add components
+		putRow1.add(lUt1Label);
+		putRow1.add(Box.createHorizontalStrut(strutHor+10));
+		putRow1.add(this.bRemoveScrFiles);
+		putRow1.add(Box.createHorizontalGlue());
+		//------ add panel
+		this.pPrefs.add(putRow1);
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(Box.createVerticalStrut(strutVer*3));
+		
+		
+		//-----------------------------------------------------------------------------------------------
+		//set title and space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(this.setPanelExtra(" About"));
+		this.pPrefs.add(Box.createVerticalStrut(10));
+
+		//-----------------------------------------------------------------------------------------------
+		//set panel about
+		//-----------------------------------------------------------------------------------------------
+		JPanel				pabRow1			= new JPanel();
+		JPanel				pabInner		= new JPanel();
+		JLabel				lLine1			= new JLabel();
+		JLabel				lLine2			= new JLabel();
+		JLabel				lLine3			= new JLabel();
+		Date 				lDate			= new Date();
+		DateFormat			lFormatCopy		= new SimpleDateFormat("yyyy");
+		//------ set border and layout
+		pabRow1.setLayout(new FlowLayout());
+		pabRow1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		//------ set background color
+		pabRow1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		//------ configure components
+		lLine1.setFont(new Font(lLine1.getFont().getFamily(), Font.BOLD, 14));
+		lLine2.setFont(new Font(lLine2.getFont().getFamily(), Font.PLAIN, 12));
+		lLine3.setFont(new Font(lLine3.getFont().getFamily(), Font.BOLD, 10));
+		lLine1.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lLine2.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lLine3.setAlignmentX(Component.CENTER_ALIGNMENT);
+		lLine1.setText("Cluster GUI for OPNET Modeler\u00ae");
+		lLine2.setText("Version 2011.0310");
+		lLine3.setText("Copyright \u00a9" + " 2010-" + lFormatCopy.format(lDate) + " Gonzalo Zarza (CAOS-UAB).");
+		pabInner.setLayout(new BoxLayout(pabInner, BoxLayout.Y_AXIS));
+		pabInner.setBackground(IAppUtils.COLOR_COMPONENTS);
+		pabInner.setAlignmentX(Component.CENTER_ALIGNMENT);
+		//------ add components
+		pabInner.add(lLine1);
+		pabInner.add(Box.createVerticalStrut(5));
+		pabInner.add(lLine2);
+		pabInner.add(Box.createVerticalStrut(15));
+		pabInner.add(lLine3);
+		pabRow1.add(pabInner);
+		//------ add panel
+		this.pPrefs.add(pabRow1);
+		//-----------------------------------------------------------------------------------------------
+		//set bottom space
+		//-----------------------------------------------------------------------------------------------
+		this.pPrefs.add(Box.createVerticalStrut(strutVer));
 		
 		
 	} // End setPanelHelp
@@ -1054,12 +1219,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//set border and layout
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+		panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 		//set background color
 		panel.setBackground(Color.GRAY);
 		//tune title
 		text.setForeground(Color.WHITE);
-		text.setFont(new Font(font.getFamily(), Font.BOLD, 12));
+		text.setFont(new Font(font.getFamily(), Font.BOLD, 14));
 		//add title
 		panel.add(text);
 		panel.add(Box.createHorizontalGlue());
@@ -1078,14 +1243,12 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//project pane
 		//--- step 2
 		this.bRunMKSIM.setEnabled(false);
-		this.cbOpnetVersion.setEnabled(false);		
 		//--- step 3
 		this.bSubmitSims.setEnabled(false);
-		this.tfSimQueue.setEnabled(false);
-		this.tfSimLicNumber.setEnabled(false);
-		this.tfSimPriority.setEnabled(false);
 		//--- app output
 		this.txAppOutput.setEnabled(true);
+		this.bAppOutputClear.setEnabled(true);
+		this.bAppOutputSave.setEnabled(false);
 		
 		//file list pane
 		this.filesTable.setEnabled(false);
@@ -1107,8 +1270,16 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.txDTSIMParams.setEnabled(false);
 		this.txDTSIMHelp.setEnabled(true);
 		
-		//help pane
-		//--- nothing to do
+		//prefs/help pane
+		this.cbOpnetVersion.setEnabled(false);
+		this.tfSimQueue.setEnabled(false);
+		this.tfSimLicNumber.setEnabled(false);
+		this.tfSimPriority.setEnabled(false);
+		this.bSimOutDir.setEnabled(false);
+		this.bSimErrDir.setEnabled(false);
+		this.bSimScrDir.setEnabled(false);
+		this.bRemoveScrFiles.setEnabled(false);
+		
 		
 	} // End void initGUILook
 	
@@ -1194,7 +1365,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.bSubmitSims.setEnabled(false);
 					this.tfSimQueue.setEnabled(false);
 					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);					
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1272,7 +1447,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.bSubmitSims.setEnabled(false);
 					this.tfSimQueue.setEnabled(false);
 					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);					
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1322,6 +1501,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.tfSimQueue.setEnabled(true);
 					this.tfSimLicNumber.setEnabled(true);
 					this.tfSimPriority.setEnabled(true);
+					this.bSimOutDir.setEnabled(true);
+					this.bSimErrDir.setEnabled(true);
+					this.bSimScrDir.setEnabled(true);
+					this.bRemoveScrFiles.setEnabled(true);
 					//--- file list pane
 					//>> nothing to do
 					//--- setup op_mksim pane
@@ -1353,7 +1536,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.bSubmitSims.setEnabled(false);
 					this.tfSimQueue.setEnabled(false);
 					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);					
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1682,13 +1869,15 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.filesTable.setAutoCreateRowSorter(true);
 			//add event listeners
 			this.filesTable.addMouseListener(this);
-			this.filesTable.addKeyListener(this);	
+			this.filesTable.addKeyListener(this);
+			//set prefered size
+			this.filesScroll.setPreferredSize(new Dimension(this.getMainPanel().getWidth()-10, 250));
 			//set checkbox col width
 			int 	wfCol1				= 80;
 			//--- col 1
 			this.filesTable.getColumnModel().getColumn(1).setMinWidth(wfCol1);
 			this.filesTable.getColumnModel().getColumn(1).setMaxWidth(wfCol1);
-			this.filesTable.getColumnModel().getColumn(1).setPreferredWidth(wfCol1);
+			this.filesTable.getColumnModel().getColumn(1).setPreferredWidth(wfCol1);			
 			//exit
 			break;
 		//-----------------------------------------------------------------------------------------------
@@ -1893,7 +2082,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			outIt						= outVec.iterator();
 			while(outIt.hasNext()){
 				output					= outIt.next();
-//				System.out.println(output); //TODO: temp
 				this.printAppOutputText(output, ClusterApp.TX_STDOUT, true);
 			}			
 			
@@ -1930,6 +2118,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		float				jobPriority	= 0;
 		
 		try {
+			
+			//TODO: get the rest of options!
 			
 			//get the submit jobs params
 			queueName					= this.tfSimQueue.getText();
@@ -2406,6 +2596,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bAppOutputClear){
 			this.printAppOutputText(null, ClusterApp.TX_STDOUT, true);
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// save console to file button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bAppOutputSave){
+			//TODO
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// remove script files button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bRemoveScrFiles){
+			//TODO
 		}
 		
 		//-----------------------------------------------------------------------------------------------

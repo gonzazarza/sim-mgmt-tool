@@ -15,7 +15,7 @@ import m1kernel.interfaces.ISysUtils;
  * GUI serving as the main interface between OPNET Modeler 14.0 and the IBM cluster at CAOS.
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1028
+ * @version		2011.0310
  */
 public class ClusterGUI extends WindowAdapter {
 
@@ -76,6 +76,9 @@ public class ClusterGUI extends WindowAdapter {
 		//set the window title
 		mainFrame.setTitle(mainGUI.appCluster.getFrameTitle());
 	
+		//prevent resizing
+		mainFrame.setResizable(false);
+		
 		//set the exit option
 		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		

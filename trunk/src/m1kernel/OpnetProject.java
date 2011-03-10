@@ -25,7 +25,7 @@ import m1kernel.interfaces.ISysUtils;
  * Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0224
+ * @version		2011.0310
  */
 public class OpnetProject implements IOpnetProject {
 
