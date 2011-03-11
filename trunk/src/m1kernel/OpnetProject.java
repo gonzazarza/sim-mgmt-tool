@@ -25,7 +25,7 @@ import m1kernel.interfaces.ISysUtils;
  * Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0310
+ * @version		2011.0311
  */
 public class OpnetProject implements IOpnetProject {
 
@@ -43,6 +43,8 @@ public class OpnetProject implements IOpnetProject {
 	private HashMap<String,HashMap<String,OpnetJob>>	networksMap			= null;				//project networks map
 	private int											efFilesNum			= 0;				//number of ef files
 	private ConsoleJob									simFileHelp			= null;				//sim files help
+	private Session										queueSession		= null;				//sim queue session
+	private HashMap<String,String>						idsInfo				= null;				//sim jobs id info container
 	//logic control attributes
 	private boolean										isProjecLoaded		= false;			//project load flag
 	private boolean										isNetworksMapSet	= false;			//networks map load flag
@@ -83,7 +85,7 @@ public class OpnetProject implements IOpnetProject {
 		
 	} // End constructor
 	
-	
+		
 	/*	
 	================================================================================================================== 
 	Methods																										
@@ -193,7 +195,7 @@ public class OpnetProject implements IOpnetProject {
 	
 	/**
 	 * Run the op_mksim command
-	 * 
+	 *
 	 * @return								the command output streams as a vector of strings
 	 * @throws 		OpnetHeavyException		if the previous operation is not applied
 	 * 										or if it is not possible to run the op_mksim command
@@ -262,16 +264,13 @@ public class OpnetProject implements IOpnetProject {
 					item 				= this.appUtils.runCommandMKSim(this.projectPath, lineCode.toString());
 					
 					if (!item.stderrActive()){
-						//save the file name
-						outVec.add("==============================================" + this.lineBreak);
-						outVec.add(" OP_MKSIM NETNAME " + netName 					+ this.lineBreak);
-						outVec.add("==============================================" + this.lineBreak);
 						//save the output
-						if (item.stdoutActive()){
-							outVec.add(item.getStdout());
+						if (item.stdoutActive()){							
+							outVec.add("##############################################" + this.lineBreak);
+							outVec.add(" op_mksim for net: " + netName 					+ this.lineBreak);
+							outVec.add("##############################################"	+ this.lineBreak);
+							outVec.add(item.getStdout());						
 						} 
-						//put an end mark
-						outVec.add("==============================================" + this.lineBreak);
 						//load the sim file name
 						this.loadSimFileName(netName);
 						//set the compiled flag
@@ -1135,7 +1134,6 @@ public class OpnetProject implements IOpnetProject {
 		//drmaa attributes
 		Vector<String>				jobsInfo		= new Vector<String>();
 		SessionFactory				factory			= SessionFactory.getFactory();
-		Session						session			= factory.getSession();
 		JobTemplate 				jt				= null;
 		String						uniqueShId		= "NO-SH-ID";
 		String 						id				= "NO-ID";
@@ -1145,6 +1143,18 @@ public class OpnetProject implements IOpnetProject {
 			
 			//get the set of compiled networks
 			itOuter									= this.networksMap.keySet().iterator();
+
+			//get session
+			this.queueSession						= factory.getSession();
+
+			//init ids info container
+			this.idsInfo							= new HashMap<String, String>();
+			
+			//initialize the DRMAA session
+			this.queueSession.init(null);
+			
+			//init the job template
+			jt										= this.queueSession.createJobTemplate();
 			
 			//check the network compiled status
 			while (itOuter.hasNext()){
@@ -1163,15 +1173,10 @@ public class OpnetProject implements IOpnetProject {
 					item							= this.networksMap.get(netName).get(fileName);
 					compiled						= item.isEfFileMKSIMCompiled();
 					included						= item.isEfFileIncluded();
-
+				
 					//ok, submit the job
 					if (included && compiled){
-						
-						//initialize the DRMAA session
-						session.init(null);
-						//init the job template
-						jt							= session.createJobTemplate();
-						
+												
 						//get the unique id for the shell script name
 						uniqueShId					= UUID.randomUUID().toString();
 
@@ -1180,9 +1185,9 @@ public class OpnetProject implements IOpnetProject {
 						
 						//set the paths if necessary
 						if (pScrDir != null){ 
-							script_name					= this.appUtils.newGenericBashScript(pScrDir, item.getSimFileDTSIMCode(), uniqueShId);
+							script_name				= this.appUtils.newGenericBashScript(pScrDir, item.getSimFileDTSIMCode(), uniqueShId);
 						} else {
-							script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
+							script_name				= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
 						}
 						
 						if (pOutDir != null){ jt.setOutputPath(pOutDir); }
@@ -1195,21 +1200,27 @@ public class OpnetProject implements IOpnetProject {
 						jt.setRemoteCommand("sh");
 						jt.setArgs(new String[] {script_name});
 						
-						id = session.runJob(jt);
-						
+						id = this.queueSession.runJob(jt);
+										
+						//save the id
+						this.idsInfo.put(id, fileName);
+												
 						//save the job name
 						jobsInfo.add("Job " + id + " (" + fileName + ") submited succesfully");			
-						
-						//destroy the job template
-						session.deleteJobTemplate(jt);
-						//finalize the DRMAA session (it does not affect the jobs)
-						session.exit();
-						
+												
 					} //end if included and compiled
 					
 				} //end inner while
 				
 			} // end outer while
+			
+			//destroy the job template
+			this.queueSession.deleteJobTemplate(jt);
+			
+			//finalize the DRMAA session (it does not affect the jobs)
+			//TODO
+//			this.queueSession.exit();
+
 			
 		} catch (OutOfMemoryError e){
 			throw new OpnetHeavyException("OutOfMemory Error: " + e.getMessage());
@@ -1243,7 +1254,7 @@ public class OpnetProject implements IOpnetProject {
 		
 		//avoid the null pointer exception
 		if (pScrPath == null){
-			throw new OpnetHeavyException("Unable to call the remove scripts method: pScrPath == null");
+			throw new OpnetHeavyException("Unable to call the remove scripts: pScrPath == null");
 		}
 		
 		//local attributes
@@ -1256,6 +1267,34 @@ public class OpnetProject implements IOpnetProject {
 		return(filesNum);
 		
 	} // End int removeOldScripts
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the sim files from the specified directory
+	 * 
+	 * @param		pScrPath				the path of the sim files
+	 * @return								the number of sim files removed
+	 * @throws		OpnetHeavyException		If errors removing the sim or null path
+	 *
+	 */
+	public int removeOldSims(String pScrPath) throws OpnetHeavyException {
+		
+		//avoid the null pointer exception
+		if (pScrPath == null){
+			throw new OpnetHeavyException("Unable to call the remove sims: pScrPath == null");
+		}
+		
+		//local attributes
+		int		filesNum		= 0;
+		
+		//calls the remove method from the utilities class
+		filesNum				= this.appUtils.removeSimFiles(pScrPath);
+		
+		//return the number of files removed
+		return(filesNum);
+		
+	} // End int removeOldSims
 	
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -1557,7 +1596,16 @@ public class OpnetProject implements IOpnetProject {
 
 	/** @return the isRunMKSIMDone */
 	public boolean isRunMKSIMDone() { return isRunMKSIMDone; }
+
+	/** @return the queueSession */
+	public Session getQueueSession() { return queueSession; }
+
+	/** @return the idsInfo */
+	public HashMap<String, String> getIdsInfo() { return idsInfo; }
+
+	/** @return the isSimSubmitDone */
+	public boolean isSimSubmitDone() { return isSimSubmitDone; }
 	
-	
+			
 } // End class OpnetProject
 

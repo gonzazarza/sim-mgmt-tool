@@ -16,6 +16,8 @@ public abstract class ClusterClass {
 	Static Attributes																										
 	==================================================================================================================
 	*/
+	//qstat update interval
+	static final int		QSTAT_INTERVAL		= 5000;							//qstat update interval in milliseconds
 	//table identifiers
 	static final int		TABLE_FILES			= 0;							//file table type
 	static final int		TABLE_PROPS_S1		= 1;							//properties table type step 1

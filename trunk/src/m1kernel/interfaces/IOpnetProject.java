@@ -1,8 +1,11 @@
 package m1kernel.interfaces;
 
 //classes
+import java.util.HashMap;
 import java.util.Set;
 import java.util.Vector;
+
+import org.ggf.drmaa.Session;
 //exceptions
 import m1kernel.exceptions.OpnetLightException;
 import m1kernel.exceptions.OpnetHeavyException;
@@ -11,7 +14,7 @@ import m1kernel.exceptions.OpnetHeavyException;
  * Interface to acces the Opnet project class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1102
+ * @version		2011.0311
  */
 public interface IOpnetProject {
 
@@ -283,6 +286,18 @@ public interface IOpnetProject {
 	 */
 	public int removeOldScripts(String pScrPath) throws OpnetHeavyException;
 	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the sim files from the specified directory
+	 * 
+	 * @param		pScrPath				the path of the sim files
+	 * @return								the number of sim files removed
+	 * @throws		OpnetHeavyException		If errors removing the sim or null path
+	 *
+	 */
+	public int removeOldSims(String pScrPath) throws OpnetHeavyException;
+	
 	
 	/*	
 	================================================================================================================== 
@@ -294,6 +309,15 @@ public interface IOpnetProject {
 	
 	/** @return the isRunMKSIMDone */
 	public boolean isRunMKSIMDone();
+	
+	/** @return the queueSession */
+	public Session getQueueSession();
+	
+	/** @return the idsInfo */
+	public HashMap<String, String> getIdsInfo();
+	
+	/** @return the isSimSubmitDone */
+	public boolean isSimSubmitDone();
 	
 } // End interface IOpnetProject
 

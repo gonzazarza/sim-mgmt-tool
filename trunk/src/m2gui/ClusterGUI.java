@@ -129,6 +129,8 @@ public class ClusterGUI extends WindowAdapter {
 							null);
 		
 		if (returnVal == JOptionPane.YES_OPTION){
+			//exit the DRMAA session if necessary
+			this.appCluster.exitDRMAASession();			
 			//log the closing operation		
 			this.sysUtils.printlnOut("... Closing the " + ClusterGUI.APP_NAME + " application now ...", this.className);
 			//exit application

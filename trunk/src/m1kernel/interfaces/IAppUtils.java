@@ -11,7 +11,7 @@ import m1kernel.exceptions.OpnetHeavyException;
  * Interface to access to the application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0310
+ * @version		2011.0311
  */
 public interface IAppUtils {
 
@@ -20,6 +20,12 @@ public interface IAppUtils {
 	Static Attributes																										
 	==================================================================================================================
 	*/
+	
+	//--- thread operation type
+	/** thread operation: run op_mksim */
+	static final int		THREAD_OP_MKSIM		= 0;
+	/** thread operation: qstat */
+	static final int		THREAD_QSTAT		= 1;
 	
 	//--- app properties status
 	/** app properties: status not applied */
@@ -180,6 +186,18 @@ public interface IAppUtils {
 	 * 
 	 */
 	public int removeScriptFiles(String pPath) throws OpnetHeavyException;
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the .sim files from the specified directory
+	 * 
+	 * @param		pPath					the directory where remove files
+	 * @return								the number of sim files removed 
+	 * @throw		OpnetHeavyException		If errors during the operation
+	 * 
+	 */
+	public int removeSimFiles(String pPath) throws OpnetHeavyException; 
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	

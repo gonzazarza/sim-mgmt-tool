@@ -3,12 +3,9 @@ package m2gui;
 //awt classes
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Frame;
 //swing classes
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -33,6 +30,7 @@ import javax.swing.JTextField;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
@@ -52,6 +50,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import org.ggf.drmaa.DrmaaException;
+import org.ggf.drmaa.Session;
 //exceptions
 import java.awt.HeadlessException;
 import java.io.DataOutputStream;
@@ -102,6 +103,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bAppOutputSave			= null;							//app info output save button
 	private JFileChooser				dFileChooser			= null;							//load file dialog
 	private JTextArea					txAppOutput				= null;							//app info output
+	private Document					deAppOutput				= null;							//app output document
 	private String[][]					s1StatusData			= null;							//step 1 app status data container
 	private JTable						s1StatusTable			= null;							//step 1 grid for the system props
 	private PropsTableModel				s1StatusModel			= null;							//step 1 default table model
@@ -149,15 +151,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bSimOutDir				= null;							//simulation output dir
 	private JButton						bSimErrDir				= null;							//simulation error dir
 	private JButton						bSimScrDir				= null;							//simulation scripts dir
+	private JButton						bKillJobs				= null;							//utilities kill jobs
+	private JButton						bRemoveSimFiles			= null;							//utilities remove sims
 	private JButton						bRemoveScrFiles			= null;							//utilities remove scripts
 	private JFileChooser				dOutChooser				= null;							//output file chooser
 	private JFileChooser				dErrChooser				= null;							//error file chooser
 	private JFileChooser				dScrChooser				= null;							//scripts file chooser
-	private JFileChooser				dOldScripts				= null;							//old scripts target dir 
+	private JFileChooser				dOldScripts				= null;							//old scripts target dir
+	private JFileChooser				dOldsims				= null;							//old sims target dir
 	private String						outDir					= null;							//path for the outputs
 	private String						errDir					= null;							//path for the error logs
 	private String						scrDir					= null;							//path for the scripts
-	private String						oldScrsDir				= null;							//path for the old scripts
 	
 	/*	
 	================================================================================================================== 
@@ -255,6 +259,34 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.tabbedPane.add(ClusterApp.TAB_5_ABOUT,	this.pPrefs);				//TO BE DEFINED!
 		
 	} // End void setTabbedPane
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/**
+	 * Exits the DRMAA session
+	 */
+	public void exitDRMAASession(){
+		
+		if (this.opProject.getQueueSession() != null){
+			
+			try {
+				//try to close the drmaa session 
+				this.opProject.getQueueSession().exit();
+				
+			} catch (DrmaaException e) {
+				//log the error
+				this.sysUtils.printlnErr("Unable to exit the DRMAA session", this.className + ", exitDRMAASession");
+				//show an error message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Unable to exit the DRMAA session.",
+						"Fatal Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+			
+		}
+		
+	} // End void exitDRMAASession
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* 1st-LEVEL METHODS: PANELS OPERATIONS																			*/
@@ -446,9 +478,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		String				userPrompt		= " No output";
 		this.txAppOutput					= new JTextArea(userPrompt, 25, 70);
 		JScrollPane			outputScroll	= new JScrollPane(this.txAppOutput);
+		this.deAppOutput					= this.txAppOutput.getDocument();
 		//------- configure components 
 		this.txAppOutput.setBackground(IAppUtils.COLOR_COMPONENTS);
 		this.txAppOutput.setFont(new Font(this.txAppOutput.getFont().getFamily(), Font.ITALIC, 12));
+		this.deAppOutput.addDocumentListener(this);
 		//------ set border and layout
 		ppoRow1.setLayout(new BoxLayout(ppoRow1, BoxLayout.X_AXIS));
 		ppoRow1.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
@@ -910,7 +944,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		int					comboHeight		= 25;
 		int					buttonWidth		= 200;
 		int					buttonHeight	= 20;
-		int					labelWidth		= 180;
+		int					labelWidth		= 150;
 		int					labelHeight		= 25;
 		int					txSize			= 15;
 		int					strutVer		= 10;
@@ -946,7 +980,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp1Title.add(Box.createHorizontalGlue());
 		//------ add components
 		pp1Row1.add(lp1Title);
-		pp1Row1.add(Box.createRigidArea(new Dimension(strutHor, strutVer*5)));
+		pp1Row1.add(Box.createRigidArea(new Dimension(strutHor, strutVer*2)));
 		//------ add panel
 		this.pPrefs.add(pp1Row1);
 		//-----------------------------------------------------------------------------------------------
@@ -977,8 +1011,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp2Title.add(lp2Label);
 		lp2Title.add(Box.createHorizontalGlue());
 		//--------- step options
-		lp2Opts.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp2Opts.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp2Opts.setLayout(new BoxLayout(lp2Opts, BoxLayout.X_AXIS));
+		lp2Opts.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp2Opts.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//--------- combobox
 		this.cbOpnetVersion.addItem(IAppUtils.OPNET_14_0_A);
@@ -993,7 +1027,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//row0
 		lp2Opts.add(lOpVer);
 		lp2Opts.add(Box.createHorizontalStrut(strutHor));
-		lp2Opts.add(this.cbOpnetVersion);		
+		lp2Opts.add(this.cbOpnetVersion);
+		lp2Opts.add(Box.createHorizontalGlue());
+		lp2Opts.add(Box.createHorizontalStrut(strutHor*20));
 		//------ add components
 		pp2Row1.add(lp2Title);
 		pp2Row1.add(lp2Opts);
@@ -1109,47 +1145,59 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp3Title.add(Box.createHorizontalGlue());
 		//--------- step options
 		//row1
-		lp3Opts1.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts1.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts1.setLayout(new BoxLayout(lp3Opts1, BoxLayout.X_AXIS));
+		lp3Opts1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts1.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts1.add(lSimQueue);
 		lp3Opts1.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts1.add(this.tfSimQueue);
+		lp3Opts1.add(Box.createHorizontalGlue());
+		lp3Opts1.add(Box.createHorizontalStrut(strutHor*20));
 		//row2
-		lp3Opts2.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts2.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts2.setLayout(new BoxLayout(lp3Opts2, BoxLayout.X_AXIS));
+		lp3Opts2.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts2.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts2.add(lSimLicNumber);
 		lp3Opts2.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts2.add(this.tfSimLicNumber);
+		lp3Opts2.add(Box.createHorizontalGlue());
+		lp3Opts2.add(Box.createHorizontalStrut(strutHor*20));
 		//row3
-		lp3Opts3.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts3.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts3.setLayout(new BoxLayout(lp3Opts3, BoxLayout.X_AXIS));
+		lp3Opts3.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts3.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts3.add(lSimPriority);
 		lp3Opts3.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts3.add(this.tfSimPriority);
+		lp3Opts3.add(Box.createHorizontalGlue());
+		lp3Opts3.add(Box.createHorizontalStrut(strutHor*20));
 		//row4
-		lp3Opts4.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts4.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts4.setLayout(new BoxLayout(lp3Opts4, BoxLayout.X_AXIS));
+		lp3Opts4.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts4.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts4.add(lSimOutDir);
 		lp3Opts4.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts4.add(this.bSimOutDir);
+		lp3Opts4.add(Box.createHorizontalGlue());
+		lp3Opts4.add(Box.createHorizontalStrut(strutHor));
 		//row5
-		lp3Opts5.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts5.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts5.setLayout(new BoxLayout(lp3Opts5, BoxLayout.X_AXIS));
+		lp3Opts5.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts5.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts5.add(lSimErrDir);
 		lp3Opts5.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts5.add(this.bSimErrDir);
+		lp3Opts5.add(Box.createHorizontalGlue());
+		lp3Opts5.add(Box.createHorizontalStrut(strutHor));
 		//row6
-		lp3Opts6.setLayout(new FlowLayout(FlowLayout.LEFT));
-		lp3Opts6.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		lp3Opts6.setLayout(new BoxLayout(lp3Opts6, BoxLayout.X_AXIS));
+		lp3Opts6.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		lp3Opts6.setBackground(IAppUtils.COLOR_COMPONENTS);
 		lp3Opts6.add(lSimScrDir);
 		lp3Opts6.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts6.add(this.bSimScrDir);
+		lp3Opts6.add(Box.createHorizontalGlue());
+		lp3Opts6.add(Box.createHorizontalStrut(strutHor));
 		//------ add components
 		pp3Row1.add(lp3Title);
 		pp3Row1.add(lp3Opts1);
@@ -1163,7 +1211,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		this.pPrefs.add(Box.createVerticalStrut(strutVer*3));
+		this.pPrefs.add(Box.createVerticalStrut(strutVer*2));
 		
 		
 		//-----------------------------------------------------------------------------------------------
@@ -1176,40 +1224,96 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//set panel utilities
 		//-----------------------------------------------------------------------------------------------
 		JPanel				putRow1			= new JPanel();
-		JLabel				lUt1Label		= new JLabel(" Remove old script files: ");
+		JPanel				putRow0			= new JPanel();
+		JPanel				putRow2			= new JPanel();
+		JLabel				lUt1Label		= new JLabel(" Remove script files: ");
+		JLabel				lUt2Label		= new JLabel(" Kill simulations: ");
+		JLabel				lUt3Label		= new JLabel(" Remove .sim files: ");
+		JLabel				lUt1Warning		= new JLabel(" Be careful! Don't remove old scripts!");
+		JLabel				lUt2Warning		= new JLabel(" Be careful! Don't kill healty sims!");
+		JLabel				lUt3Warning		= new JLabel(" Be careful! Don't remove non-started sims!");
+		this.bKillJobs						= new JButton("Kill all sims");
+		this.bRemoveSimFiles				= new JButton("Select target dir");
 		this.bRemoveScrFiles				= new JButton("Select target dir");
+		this.dOldsims						= new JFileChooser(){
+			@Override
+			public void approveSelection(){ 
+				if (getSelectedFile().isFile()){ return; }
+				super.approveSelection();
+			}
+		};
 		this.dOldScripts					= new JFileChooser(){
 			@Override
 			public void approveSelection(){ 
 				if (getSelectedFile().isFile()){ return; }
 				super.approveSelection();
 			}
-		};		
+		};		 
 		this.dOldScripts.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		this.dOldScripts.setFileFilter(new FileNameExtensionFilter("Bash script files (*.sh)","sh"));
 		this.dOldScripts.setAcceptAllFileFilterUsed(false);
-		this.dOldScripts.setMultiSelectionEnabled(false);
+		this.dOldScripts.setMultiSelectionEnabled(false);		 
+		this.dOldsims.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOldsims.setFileFilter(new FileNameExtensionFilter("Simulation files (*.sim)","sim"));
+		this.dOldsims.setAcceptAllFileFilterUsed(false);
+		this.dOldsims.setMultiSelectionEnabled(false);
 		//------ set border and layout
 		putRow1.setLayout(new BoxLayout(putRow1, BoxLayout.X_AXIS));
 		putRow1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		putRow0.setLayout(new BoxLayout(putRow0, BoxLayout.X_AXIS));
+		putRow0.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		putRow2.setLayout(new BoxLayout(putRow2, BoxLayout.X_AXIS));
+		putRow2.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		//------ set background color
 		putRow1.setBackground(IAppUtils.COLOR_COMPONENTS);
+		putRow0.setBackground(IAppUtils.COLOR_COMPONENTS);
+		putRow2.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//------ configure components
 		this.bRemoveScrFiles.addActionListener(this);
 		this.bRemoveScrFiles.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bRemoveSimFiles.addActionListener(this);
+		this.bRemoveSimFiles.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+		this.bKillJobs.addActionListener(this);
+		this.bKillJobs.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
 		lUt1Label.setFont(new Font(lUt1Label.getFont().getFamily(), Font.PLAIN, 12));
 		lUt1Label.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lUt2Label.setFont(new Font(lUt2Label.getFont().getFamily(), Font.PLAIN, 12));
+		lUt2Label.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lUt3Label.setFont(new Font(lUt3Label.getFont().getFamily(), Font.PLAIN, 12));
+		lUt3Label.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		lUt1Warning.setForeground(Color.RED);
+		lUt2Warning.setForeground(Color.RED);
+		lUt3Warning.setForeground(Color.RED);
 		//------ add components
+		//row1
 		putRow1.add(lUt1Label);
-		putRow1.add(Box.createHorizontalStrut(strutHor+10));
+		putRow1.add(Box.createHorizontalStrut(strutHor));
 		putRow1.add(this.bRemoveScrFiles);
+		putRow1.add(Box.createHorizontalStrut(20));
+		putRow1.add(lUt1Warning);
 		putRow1.add(Box.createHorizontalGlue());
+		//row2
+		putRow2.add(lUt3Label);
+		putRow2.add(Box.createHorizontalStrut(strutHor));
+		putRow2.add(this.bRemoveSimFiles);
+		putRow2.add(Box.createHorizontalStrut(20));
+		putRow2.add(lUt3Warning);
+		putRow2.add(Box.createHorizontalGlue());
+		//row0
+		putRow0.add(lUt2Label);
+		putRow0.add(Box.createHorizontalStrut(strutHor));
+		putRow0.add(this.bKillJobs);
+		putRow0.add(Box.createHorizontalStrut(20));
+		putRow0.add(lUt2Warning);
+		putRow0.add(Box.createHorizontalGlue());
 		//------ add panel
+		this.pPrefs.add(putRow0);
+		this.pPrefs.add(putRow2);
 		this.pPrefs.add(putRow1);
 		//-----------------------------------------------------------------------------------------------
 		//set bottom space
 		//-----------------------------------------------------------------------------------------------
-		this.pPrefs.add(Box.createVerticalStrut(strutVer*3));
+		this.pPrefs.add(Box.createVerticalStrut(strutVer*2));
 		
 		
 		//-----------------------------------------------------------------------------------------------
@@ -1242,7 +1346,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lLine3.setAlignmentX(Component.CENTER_ALIGNMENT);
 		lLine1.setText("Cluster GUI for OPNET Modeler\u00ae");
 		lLine2.setText("Version 2011.0310");
-		lLine3.setText("Copyright \u00a9" + " 2010-" + lFormatCopy.format(lDate) + " Gonzalo Zarza (CAOS-UAB).");
+		lLine3.setText("Copyright \u00a9" + " 2010-" + lFormatCopy.format(lDate) + " CAOS-UAB (Gonzalo Zarza).");
 		pabInner.setLayout(new BoxLayout(pabInner, BoxLayout.Y_AXIS));
 		pabInner.setBackground(IAppUtils.COLOR_COMPONENTS);
 		pabInner.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1255,10 +1359,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		pabRow1.add(pabInner);
 		//------ add panel
 		this.pPrefs.add(pabRow1);
-		//-----------------------------------------------------------------------------------------------
-		//set bottom space
-		//-----------------------------------------------------------------------------------------------
-		this.pPrefs.add(Box.createVerticalStrut(strutVer));
 		
 		
 	} // End setPanelHelp
@@ -1339,8 +1439,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.bSimOutDir.setEnabled(false);
 		this.bSimErrDir.setEnabled(false);
 		this.bSimScrDir.setEnabled(false);
-		this.bRemoveScrFiles.setEnabled(false);
-		
+		this.bKillJobs.setEnabled(false);		
 		
 	} // End void initGUILook
 	
@@ -1424,13 +1523,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.bRunMKSIM.setEnabled(false);
 					this.cbOpnetVersion.setEnabled(false);		
 					this.bSubmitSims.setEnabled(false);
-					this.tfSimQueue.setEnabled(false);
-					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);	
-					this.bSimOutDir.setEnabled(false);
-					this.bSimErrDir.setEnabled(false);
-					this.bSimScrDir.setEnabled(false);
-					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1449,7 +1541,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.txDTSIMParams.setEnabled(false);
 					this.txDTSIMHelp.setEnabled(true);
 					//--- help pane
-					//>> nothing to do
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bKillJobs.setEnabled(false);
 					
 					//reset corresponding variables
 					//>> nothing to do
@@ -1506,13 +1604,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.bRunMKSIM.setEnabled(false);
 					this.cbOpnetVersion.setEnabled(false);		
 					this.bSubmitSims.setEnabled(false);
-					this.tfSimQueue.setEnabled(false);
-					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);	
-					this.bSimOutDir.setEnabled(false);
-					this.bSimErrDir.setEnabled(false);
-					this.bSimScrDir.setEnabled(false);
-					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1531,7 +1622,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.txDTSIMParams.setEnabled(false);
 					this.txDTSIMHelp.setEnabled(true);
 					//--- help pane
-					//>> nothing to do
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bKillJobs.setEnabled(false);
 					
 					//reset corresponding variables
 					//>> nothing to do
@@ -1559,13 +1656,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//enable gui components
 					//--- project pane
 					this.bSubmitSims.setEnabled(true);
-					this.tfSimQueue.setEnabled(true);
-					this.tfSimLicNumber.setEnabled(true);
-					this.tfSimPriority.setEnabled(true);
-					this.bSimOutDir.setEnabled(true);
-					this.bSimErrDir.setEnabled(true);
-					this.bSimScrDir.setEnabled(true);
-					this.bRemoveScrFiles.setEnabled(true);
 					//--- file list pane
 					//>> nothing to do
 					//--- setup op_mksim pane
@@ -1574,7 +1664,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.cbSimsList.setEnabled(true);
 					this.txDTSIMParams.setEnabled(true);
 					//--- help pane
-					//>> nothing to do			
+					this.tfSimQueue.setEnabled(true);
+					this.tfSimLicNumber.setEnabled(true);
+					this.tfSimPriority.setEnabled(true);
+					this.bSimOutDir.setEnabled(true);
+					this.bSimErrDir.setEnabled(true);
+					this.bSimScrDir.setEnabled(true);
+					this.bKillJobs.setEnabled(true);			
 					
 					//set corresponding variables
 					//>> nothing to do
@@ -1595,13 +1691,6 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//disable gui components
 					//--- project pane
 					this.bSubmitSims.setEnabled(false);
-					this.tfSimQueue.setEnabled(false);
-					this.tfSimLicNumber.setEnabled(false);
-					this.tfSimPriority.setEnabled(false);	
-					this.bSimOutDir.setEnabled(false);
-					this.bSimErrDir.setEnabled(false);
-					this.bSimScrDir.setEnabled(false);
-					this.bRemoveScrFiles.setEnabled(false);
 					//--- file list pane
 					this.filesTable.setEnabled(false);
 					this.ckSelectNone.setEnabled(false);
@@ -1620,7 +1709,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.txDTSIMParams.setEnabled(false);
 					this.txDTSIMHelp.setEnabled(true);
 					//--- help pane
-					//>> nothing to do
+					this.tfSimQueue.setEnabled(false);
+					this.tfSimLicNumber.setEnabled(false);
+					this.tfSimPriority.setEnabled(false);	
+					this.bSimOutDir.setEnabled(false);
+					this.bSimErrDir.setEnabled(false);
+					this.bSimScrDir.setEnabled(false);
+					this.bKillJobs.setEnabled(false);
 					
 					//reset corresponding variables
 					//>> nothing to do
@@ -1805,6 +1900,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					")", this.className + ", setNotAppliedStatus"
 				);
 		}			
+		
+//		//clear the output
+//		this.printAppOutputText(" ", ClusterApp.TX_STDOUT, true);
 		
 	} // End void setNotAppliedStatus
 	
@@ -2092,15 +2190,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		 * 
 		 */
 		
-		//TODO: NO SE PORQUE PERO HAY PROBLEMAS CON LOS OUTPUTS DE LOS MK_SIM...
-		//TAMBIEN TENGO QUE TENER EN CUENTA QUE PUEDO TENER MAS DE UNA COMPILACION...
-		
 		//local attributes
 		boolean 			opStatus	= false;
 		Iterator<String>	outIt		= null;
 		Vector<String>		outVec		= null;
 		String				output		= null;
 		Set<String>			selNets		= null;
+		int 				returnVal	= 0;	
 		
 		//check if ef files selected
 		try {
@@ -2127,23 +2223,44 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			return;
 		}
 		
-		//set the Opnet version status
-		this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
 		//set the running status
 		this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_RUNNING);
+
+		//confirms the operation		
+		returnVal	= JOptionPane.showOptionDialog(
+							this.mainPanel,
+							"This operation may take some time... continue?",
+							"Confirm operation",
+							JOptionPane.YES_NO_OPTION, 
+							JOptionPane.QUESTION_MESSAGE, 
+							null,
+							null,
+							null);
+		
+		//if NO cancel the operation
+		if (returnVal == JOptionPane.NO_OPTION){
+			//update the status
+			this.statusDataSetValue(ClusterApp.LABEL_RUN_MKSIM, IAppUtils.STAT_NOT_APPLIED);
+			//show the message in the output text area
+			this.printAppOutputText("Run op_mksim operation canceled by user.", ClusterApp.TX_STDERR, true);
+			//get out
+			return; 
+		}
 		
 		//run the op_mksim command for the selected net names
 		try {
-		
-			//run the command 
+					
+			//run the command			
 			outVec						= this.opProject.runMKSIMCmd();
+			
+			this.printAppOutputText(" ", ClusterApp.TX_STDOUT, true);
 			
 			//load the output into the corresponding text area
 			//--- get the stdout and stderr data
 			outIt						= outVec.iterator();
 			while(outIt.hasNext()){
 				output					= outIt.next();
-				this.printAppOutputText(output, ClusterApp.TX_STDOUT, true);
+				this.printAppOutputText(output, ClusterApp.TX_STDOUT, false);
 			}			
 			
 			//set the status flag
@@ -2179,9 +2296,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		float				jobPriority	= 0;
 		
 		try {
-			
-			//TODO: get the rest of options!
-			
+				
 			//get the submit jobs params
 			queueName					= this.tfSimQueue.getText();
 			opLicNum					= Integer.valueOf(this.tfSimLicNumber.getText());
@@ -2209,13 +2324,18 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				
 			} else {			
 				//submit jobs
-				jobsInfo				= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority, this.outDir, this.errDir, this.scrDir);
-				
+				jobsInfo				= this.opProject.submitSimJobs(	queueName, opLicNum, jobPriority, 
+																		this.outDir, this.errDir, this.scrDir);
 				//write the output
 				if (jobsInfo != null){						
+					//print header
+					this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, true);
+					this.printAppOutputText(" Enqueued jobs", ClusterApp.TX_STDOUT, false);
+					this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, false);
+					//print info
 					it					= jobsInfo.iterator();				
 					while (it.hasNext()){					
-						this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, true);					
+						this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, false);					
 					}				
 				}				
 				//update the completion flag
@@ -2239,7 +2359,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}
 		
 		//triggers the corresponding phase and actions
-		this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
+		//this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
 		
 	} // End startPhase4
 	
@@ -2251,10 +2371,107 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private void startPhase5(){
 		
 		//local attributes
-		boolean 			opStatus	= false;
+		boolean 				opStatus	= false;
+		int						qsStatus	= 0;
+		int 					endCounter	= 0;
+		int						jobCounter	= 0;
+		String					id			= null;
+		String					fileName	= null;
+		String					status		= null;
+		HashMap<String,String>	idsInfo		= null;
+		Iterator<String>		idsIter		= null;
 		
-		//TODO
+		//check the previous condition
+		if (!this.opProject.isSimSubmitDone()){
+			//show the error message
+			this.sysUtils.printlnErr("Unable to monitor queued jobs: submit not applied", this.className + ", startPhase5");
+			//show the error in the output text area
+			this.printAppOutputText("Unable to monitor queued jobs: submit not applied", ClusterApp.TX_STDERR, true);
+			//update the status
+			this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_FAIL);
+			//get out
+			return; 
+		}
+		//get the sims info
+		idsInfo							= this.opProject.getIdsInfo();
 		
+		//go over the sims list
+		if (idsInfo != null){
+		
+			//get iterator
+			idsIter						= idsInfo.keySet().iterator();
+			jobCounter					= idsInfo.size();		
+			
+			//keep monitoring the queue until end...
+//			while (jobCounter > endCounter){
+				
+				//init counter
+				endCounter				= 0;
+				
+				//print header
+				this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, true);
+				this.printAppOutputText(" Enqueued jobs status", ClusterApp.TX_STDOUT, false);
+				this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, false);
+				
+				//now go over the sims 
+				while (idsIter.hasNext()){
+					
+					id					= idsIter.next();
+					fileName			= idsInfo.get(id);
+										
+					try{
+						
+						qsStatus		= this.opProject.getQueueSession().getJobProgramStatus(id);
+					
+						switch (qsStatus){					
+						case Session.UNDETERMINED: 			status = "status cannot be determined"; 							break;						
+						case Session.QUEUED_ACTIVE:			status = "is queued and active"; 									break;
+						case Session.USER_ON_HOLD:			status = "is queued and in user hold"; 								break;
+						case Session.SYSTEM_ON_HOLD:		status = "is queued and in system hold"; 							break;
+						case Session.USER_SYSTEM_ON_HOLD:	status = "is queued and in user and system hold";					break;
+						case Session.RUNNING:				status = "is running"; 												break;
+						case Session.SYSTEM_SUSPENDED:		status = "is system suspended"; 									break;
+						case Session.USER_SUSPENDED:		status = "is user suspended"; 										break;
+						case Session.USER_SYSTEM_SUSPENDED:	status = "is user and system suspended"; 							break;
+						case Session.DONE:					status = "finished normally"; 						endCounter++;	break;
+						case Session.FAILED:				status = "finished, but failed"; 					endCounter++;	break;
+						}
+						
+						this.printAppOutputText("Job " + id + " (" + fileName + ") " + status, ClusterApp.TX_STDOUT, false);
+						
+						//update status
+						this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_RUNNING);
+						
+					} catch (DrmaaException e){
+						//show the error message
+						this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
+						//show the error in the output text area
+						this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
+						//update status flag
+						opStatus 		= false;
+					}
+					
+				} // End inner while
+				
+				//wait a predefined time
+				try {
+					Thread.sleep(ClusterClass.QSTAT_INTERVAL);
+				} catch (InterruptedException e) {
+					//show the error message
+					this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
+					//show the error in the output text area
+					this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
+					//update status flag
+					opStatus 		= false;
+				}
+				
+//			} // End forever while
+			
+			//check final status
+			if (jobCounter == endCounter){ opStatus = true; }
+			
+		}
+			
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_5_MONITOR_JOBS, opStatus);
 		
@@ -2279,6 +2496,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			this.s1StatusData[0][1]		= pValue;
 			this.s1StatusModel.fireTableDataChanged();
+
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_1_LOAD_PRJ);
+			}
 			
 		} else if (pField.equals(ClusterApp.LABEL_LOAD_EF)){
 			//avoid null pointer exception
@@ -2287,12 +2508,20 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.s1StatusData[1][1]		= pValue;
 			this.s1StatusModel.fireTableDataChanged();
 			
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_2_LOAD_EF);
+			}
+			
 		} else if (pField.equals(ClusterApp.LABEL_CHECK_OP_VER)){
 			//avoid null pointer exception
 			if (this.s2StatusData == null){ return; }
 			
 			this.s2StatusData[0][1]		= pValue;
 			this.s2StatusModel.fireTableDataChanged();
+			
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_3_RUN_MKSIM);
+			}
 			
 		} else if (pField.equals(ClusterApp.LABEL_RUN_MKSIM)){
 			//avoid null pointer exception
@@ -2301,6 +2530,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.s2StatusData[1][1]		= pValue;
 			this.s2StatusModel.fireTableDataChanged();
 			
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_3_RUN_MKSIM);
+			}
+			
 		} else if (pField.equals(ClusterApp.LABEL_SUBMIT_SIM)){
 			//avoid null pointer exception
 			if (this.s3StatusData == null){ return; }
@@ -2308,12 +2541,21 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.s3StatusData[0][1]		= pValue;
 			this.s3StatusModel.fireTableDataChanged();
 			
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_4_SUBMIT_SIM);
+			}
+			
 		} else if (pField.equals(ClusterApp.LABEL_QSTAT)){
 			//avoid null pointer exception
 			if (this.s3StatusData == null){ return; }
 			
 			this.s3StatusData[1][1]		= pValue;
 			this.s3StatusModel.fireTableDataChanged();
+			
+			if (pValue == IAppUtils.STAT_FAIL || pValue == IAppUtils.STAT_NOT_APPLIED){
+				this.setNotAppliedStatus(ClusterApp.STEP_5_MONITOR_JOBS);
+			}
+			
 		} else {
 			//error
 			this.sysUtils.printlnErr("Unknwon field '"	+ pField + "'", this.className + ", setStatusDataValue");
@@ -2445,6 +2687,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.txAppOutput.setText("");
 		}
 		
+		//restorte the default font
+		this.txAppOutput.setFont(new Font(	this.txAppOutput.getFont().getFamily(), 
+											Font.PLAIN, 
+											this.txAppOutput.getFont().getSize()));	
+		
 		//set the fg color according to the printing mode
 		switch (pOutType){
 		case ClusterApp.TX_STDOUT:
@@ -2460,7 +2707,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//print the text
 		if (pText != null){
-			this.txAppOutput.append(pText);		
+			this.txAppOutput.append(pText + this.lineBreak);		
 		}
 		
 	} // End void printAppOutputText
@@ -2641,6 +2888,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		if (e.getSource() == this.bRunMKSIM){ 
 			//show the time info message in the text area
 			this.printAppOutputText("This operation may take a few minutes to complete." + this.lineBreak + "Please wait...", ClusterApp.TX_STDOUT, true);
+			
+			//set the Opnet version status
+			this.statusDataSetValue(ClusterApp.LABEL_CHECK_OP_VER, IAppUtils.STAT_DONE);
+			
 			//start the phase 3
 			this.startPhase3(); 
 		}
@@ -2656,7 +2907,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		// clear console button
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bAppOutputClear){
+			//clear the console
 			this.printAppOutputText(null, ClusterApp.TX_STDOUT, true);
+			//disables the save button
+			this.bAppOutputSave.setEnabled(false);
+			
 		}
 		
 		//-----------------------------------------------------------------------------------------------
@@ -2822,11 +3077,19 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}
 		
 		//-----------------------------------------------------------------------------------------------
+		// kill jobs button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bKillJobs){
+			//TODO
+		}
+				
+		//-----------------------------------------------------------------------------------------------
 		// remove script files button
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bRemoveScrFiles){
 			
 			//local attributes
+			String			oldScrsDir		= null;
 			int				returnVal		= 0;
 			int				filesRemNum		= 0;
 			
@@ -2841,7 +3104,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//get the project file directory
 			if (returnVal == JFileChooser.APPROVE_OPTION){				
 				//get the output path
-				this.oldScrsDir				= this.dOldScripts.getSelectedFile().getPath();			
+				oldScrsDir					= this.dOldScripts.getSelectedFile().getPath();			
 			} else { 
 				//show a popup message
 				JOptionPane.showMessageDialog(
@@ -2855,7 +3118,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			
 			try {
 				
-				filesRemNum					= this.opProject.removeOldScripts(this.oldScrsDir);
+				filesRemNum					= this.opProject.removeOldScripts(oldScrsDir);
 				
 				//show a messsage
 				JOptionPane.showMessageDialog(
@@ -2871,6 +3134,65 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				JOptionPane.showMessageDialog(
 						this.mainPanel,
 						"Unable to remove the bash script files (see the log file)",
+						"ERROR",
+						JOptionPane.ERROR_MESSAGE);
+				//get out
+				return;
+			}
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// remove sim files button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bRemoveSimFiles){
+			
+			//local attributes
+			String			oldSims			= null;
+			int				returnVal		= 0;
+			int				filesRemNum		= 0;
+			
+			//try to load the output path
+			try{
+				returnVal					= this.dOldsims.showOpenDialog(this.pProject);
+			} catch (HeadlessException err){
+				this.sysUtils.printlnErr(err.getMessage(), this.className + ", actionPerformed (bRemoveSimFiles)");
+				return;
+			}
+			
+			//get the project file directory
+			if (returnVal == JFileChooser.APPROVE_OPTION){				
+				//get the output path
+				oldSims						= this.dOldsims.getSelectedFile().getPath();			
+			} else { 
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Unable to get the sims directory",
+						"",
+						JOptionPane.INFORMATION_MESSAGE);
+				//get out
+				return;
+			}
+			
+			try {
+				
+				filesRemNum					= this.opProject.removeOldSims(oldSims);
+				
+				//show a messsage
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						Integer.toString(filesRemNum) + " simulation file(s) removed",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				
+			} catch (OpnetHeavyException ex) {
+				//log the error
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (bRemoveSimFiles)");
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Unable to remove the simulation files (see the log file)",
 						"ERROR",
 						JOptionPane.ERROR_MESSAGE);
 				//get out
@@ -3507,6 +3829,14 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.bSimsReset.setEnabled(true);
 		}
 		
+		//-------------------------------------------------------------------------------------------
+		// object: application output text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deAppOutput){
+			//enable the save button
+			this.bAppOutputSave.setEnabled(true);
+		}
+		
 	} // End void insertUpdate
 
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -3533,6 +3863,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			this.bSimsReset.setEnabled(true);
 		}
 
+		//-------------------------------------------------------------------------------------------
+		// object: application output text area document
+		//-------------------------------------------------------------------------------------------
+		if (e.getDocument() == this.deAppOutput){
+			//enable the save button
+			this.bAppOutputSave.setEnabled(true);
+		}
 		
 	} // End void removeUpdate
 

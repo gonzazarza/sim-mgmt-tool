@@ -25,7 +25,7 @@ import m1kernel.interfaces.ISysUtils;
  * Application oriented utilities class
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0310
+ * @version		2011.0311
  */
 public class AppUtils implements IAppUtils {
 
@@ -1035,6 +1035,74 @@ public class AppUtils implements IAppUtils {
 		return(remNum);
 		
 	} // End int removeScriptFiles
+
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the .sim files from the specified directory
+	 * 
+	 * @param		pPath					the directory where remove files
+	 * @return								the number of sim files removed 
+	 * @throw		OpnetHeavyException		If errors during the operation
+	 * 
+	 */
+	public int removeSimFiles(String pPath) throws OpnetHeavyException {
+		
+		//avoid null pointer exception
+		if (pPath == null){ 
+			throw new OpnetHeavyException("Unable to remove the sim files: path == null");
+		}
+		
+		//local attributes
+		String			okPath	= pPath;
+		File		bashPath		= null;
+		File		bashFile		= null;
+		File[]		filesList		= null;
+		boolean		endOk			= false;
+		int			remNum			= 0;
+		
+		//check the path end char
+		if (!okPath.endsWith(this.fileSeparator)){
+			//fix the path ending
+			okPath					= okPath + this.fileSeparator;
+		}
+		
+		//try to delete the bash script file
+		try{
+		
+			//get the directory
+			bashPath				= new File(okPath);
+			
+			//check if exists
+			if (bashPath.exists()){
+				//get the list of files (all files)
+				filesList			= bashPath.listFiles();
+				
+				//remove only the sh files
+				for (int i = 0; i < filesList.length; i++){
+					
+					bashFile		= filesList[i];
+					endOk			= bashFile.getName().endsWith(".sim"); 
+					
+					if (endOk){ 
+						bashFile.delete();
+						remNum++;
+					}
+					
+				}
+				
+			} else {
+				throw new OpnetHeavyException("Unable to load the path " + pPath);				
+			}		
+			
+		} catch (NullPointerException e){
+			throw new OpnetHeavyException("Unable to open the path dir " + pPath);
+		}	
+				
+		//return the number of files removed
+		return(remNum);
+		
+	} // End int removeSimFiles
 
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
