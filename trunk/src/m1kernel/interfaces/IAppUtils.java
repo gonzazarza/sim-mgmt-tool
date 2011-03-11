@@ -175,10 +175,11 @@ public interface IAppUtils {
 	 * Remove the script files from the specified directory
 	 * 
 	 * @param		pPath					the directory where remove files
+	 * @return								the number of script files removed 
 	 * @throw		OpnetHeavyException		If errors during the rm command
 	 * 
 	 */
-	public void removeScriptFiles(String pPath) throws OpnetHeavyException;
+	public int removeScriptFiles(String pPath) throws OpnetHeavyException;
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	

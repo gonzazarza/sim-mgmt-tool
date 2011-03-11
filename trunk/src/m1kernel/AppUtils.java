@@ -972,10 +972,11 @@ public class AppUtils implements IAppUtils {
 	 * Remove the script files from the specified directory
 	 * 
 	 * @param		pPath					the directory where remove files
+	 * @return								the number of script files removed 
 	 * @throw		OpnetHeavyException		If errors during the rm command
 	 * 
 	 */
-	public void removeScriptFiles(String pPath) throws OpnetHeavyException {
+	public int removeScriptFiles(String pPath) throws OpnetHeavyException {
 		
 		//avoid null pointer exception
 		if (pPath == null){ 
@@ -983,8 +984,13 @@ public class AppUtils implements IAppUtils {
 		}
 		
 		//local attributes
-		ConsoleJob		output	= null;
 		String			okPath	= pPath;
+		File		bashPath		= null;
+		File		bashFile		= null;
+		File[]		filesList		= null;
+		boolean		startOk			= false;
+		boolean		endOk			= false;
+		int			remNum			= 0;
 		
 		//check the path end char
 		if (!okPath.endsWith(this.fileSeparator)){
@@ -992,22 +998,43 @@ public class AppUtils implements IAppUtils {
 			okPath					= okPath + this.fileSeparator;
 		}
 		
-		//run the command rm * path/script*.sh
-		try {
-			output				= this.runCommand("rm", okPath + this.jobScrFileBaseName + "*.sh");
-			
-			//get the arch
-			if (output.stderrActive()){
-				throw new OpnetHeavyException(output.getStderr());
-			}
-			
-		} catch (Exception e) {
-			throw new OpnetHeavyException(e.getMessage());
-		}
+		//try to delete the bash script file
+		try{
 		
-	} // End void removeScriptFiles
+			//get the directory
+			bashPath				= new File(okPath);
+			
+			//check if exists
+			if (bashPath.exists()){
+				//get the list of files (all files)
+				filesList			= bashPath.listFiles();
+				
+				//remove only the sh files
+				for (int i = 0; i < filesList.length; i++){
+					
+					bashFile		= filesList[i];
+					startOk			= bashFile.getName().startsWith(this.jobScrFileBaseName);
+					endOk			= bashFile.getName().endsWith(".sh"); 
+					
+					if (startOk && endOk){ 
+						bashFile.delete();
+						remNum++;
+					}
+					
+				}
+				
+			} else {
+				throw new OpnetHeavyException("Unable to load the path " + pPath);				
+			}		
+			
+		} catch (NullPointerException e){
+			throw new OpnetHeavyException("Unable to open the path dir " + pPath);
+		}	
+				
+		//return the number of files removed
+		return(remNum);
 		
-	/* ------------------------------------------------------------------------------------------------------------ */
+	} // End int removeScriptFiles
 
 	
 	/* ------------------------------------------------------------------------------------------------------------ */

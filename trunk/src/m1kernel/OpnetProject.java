@@ -1096,13 +1096,17 @@ public class OpnetProject implements IOpnetProject {
 	 * @param		pQueueName				the queue to be used
 	 * @param		pOpLicNum				the number of Opnet licenses needed 
 	 * @param		pJobPriority			the Unix priority of the jobs
+	 * @param		pOutDir					the output directory
+	 * @param		pErrDir					the error directory
+	 * @param		pScrDir					the script directory 
 	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
 	 *  									in case of an IllegalArgumentException
 	 *  									in case of an OutOfMemory Error 
 	 */
-	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority) throws OpnetHeavyException {
+	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority, 
+										String pOutDir, String pErrDir, String pScrDir) throws OpnetHeavyException {
 		
 		//check the previous operation status
 		if (!this.isRunMKSIMDone) {
@@ -1112,6 +1116,9 @@ public class OpnetProject implements IOpnetProject {
 		if (!this.isSimSetupDone) {
 			throw new OpnetHeavyException("Unable to get the compiled sim job names: sim jobs not set");
 		}
+		
+		//avoid null pointer exception
+		if (pQueueName 	== null){ throw new OpnetHeavyException("Unable to proceed: pQueueName == null"); }
 		
 		//clear flag
 		this.isSimSubmitDone						= false;
@@ -1167,14 +1174,24 @@ public class OpnetProject implements IOpnetProject {
 						
 						//get the unique id for the shell script name
 						uniqueShId					= UUID.randomUUID().toString();
-						
+
+						//set job name
 						jt.setJobName(fileName);
-						script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
-								
+						
+						//set the paths if necessary
+						if (pScrDir != null){ 
+							script_name					= this.appUtils.newGenericBashScript(pScrDir, item.getSimFileDTSIMCode(), uniqueShId);
+						} else {
+							script_name					= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
+						}
+						
+						if (pOutDir != null){ jt.setOutputPath(pOutDir); }
+						if (pErrDir != null){ jt.setErrorPath(pErrDir); }
+						
 						jt.setNativeSpecification("-l opnet_licenses=" + Integer.toString(pOpLicNum));
 						jt.setNativeSpecification("-q " + pQueueName);
 						jt.setNativeSpecification("-p " + Float.toString(pJobPriority));
-						
+												
 						jt.setRemoteCommand("sh");
 						jt.setArgs(new String[] {script_name});
 						
@@ -1211,6 +1228,35 @@ public class OpnetProject implements IOpnetProject {
 		return(jobsInfo);
 		
 	} // End Vector<String> submitSimJobs
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the bash script files from the specified directory
+	 * 
+	 * @param		pScrPath				the path of the bash script files
+	 * @return								the number of bash files removed
+	 * @throws		OpnetHeavyException		If errors removing the scripts or null path
+	 *
+	 */
+	public int removeOldScripts(String pScrPath) throws OpnetHeavyException {
+		
+		//avoid the null pointer exception
+		if (pScrPath == null){
+			throw new OpnetHeavyException("Unable to call the remove scripts method: pScrPath == null");
+		}
+		
+		//local attributes
+		int		filesNum		= 0;
+		
+		//calls the remove method from the utilities class
+		filesNum				= this.appUtils.removeScriptFiles(pScrPath);
+		
+		//return the number of files removed
+		return(filesNum);
+		
+	} // End int removeOldScripts
+	
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	/* PRIVATE METHODS																								*/

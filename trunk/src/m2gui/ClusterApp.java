@@ -3,9 +3,12 @@ package m2gui;
 //awt classes
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Frame;
 //swing classes
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -45,14 +48,18 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-
-import javax.swing.GroupLayout.Alignment;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 //exceptions
 import java.awt.HeadlessException;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import m1kernel.exceptions.OpnetLightException;
 import m1kernel.exceptions.OpnetHeavyException;
 //abstract classes
@@ -143,6 +150,14 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private JButton						bSimErrDir				= null;							//simulation error dir
 	private JButton						bSimScrDir				= null;							//simulation scripts dir
 	private JButton						bRemoveScrFiles			= null;							//utilities remove scripts
+	private JFileChooser				dOutChooser				= null;							//output file chooser
+	private JFileChooser				dErrChooser				= null;							//error file chooser
+	private JFileChooser				dScrChooser				= null;							//scripts file chooser
+	private JFileChooser				dOldScripts				= null;							//old scripts target dir 
+	private String						outDir					= null;							//path for the outputs
+	private String						errDir					= null;							//path for the error logs
+	private String						scrDir					= null;							//path for the scripts
+	private String						oldScrsDir				= null;							//path for the old scripts
 	
 	/*	
 	================================================================================================================== 
@@ -884,6 +899,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	/**
 	 * Set the help panel
 	 */
+	@SuppressWarnings("serial")
 	private void setPanelPrefs(){
 				
 		//initialize panel
@@ -1013,6 +1029,40 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		this.bSimOutDir						= new JButton("Select out dir");
 		this.bSimErrDir						= new JButton("Select error dir");
 		this.bSimScrDir						= new JButton("Select scripts dir");
+		this.dOutChooser					= new JFileChooser(){
+			@Override
+			public void approveSelection(){ 
+				if (getSelectedFile().isFile()){ return; }
+				super.approveSelection();
+			}
+		};	
+		this.dErrChooser					= new JFileChooser(){
+			@Override
+			public void approveSelection(){ 
+				if (getSelectedFile().isFile()){ return; }
+				super.approveSelection();
+			}
+		};	
+		this.dScrChooser					= new JFileChooser(){
+			@Override
+			public void approveSelection(){ 
+				if (getSelectedFile().isFile()){ return; }
+				super.approveSelection();
+			}
+		};	
+		this.dOutChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOutChooser.setAcceptAllFileFilterUsed(false);
+		this.dOutChooser.setMultiSelectionEnabled(false);
+		this.dErrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dErrChooser.setAcceptAllFileFilterUsed(false);
+		this.dErrChooser.setMultiSelectionEnabled(false);
+		this.dScrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dScrChooser.setAcceptAllFileFilterUsed(false);
+		this.dScrChooser.setMultiSelectionEnabled(false);
+		//------ add listeners
+		this.bSimOutDir.addActionListener(this);
+		this.bSimErrDir.addActionListener(this);
+		this.bSimScrDir.addActionListener(this);
 		//------ set border and layout
 		pp3Row1.setLayout(new BoxLayout(pp3Row1, BoxLayout.PAGE_AXIS));
 		pp3Row1.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -1128,6 +1178,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		JPanel				putRow1			= new JPanel();
 		JLabel				lUt1Label		= new JLabel(" Remove old script files: ");
 		this.bRemoveScrFiles				= new JButton("Select target dir");
+		this.dOldScripts					= new JFileChooser(){
+			@Override
+			public void approveSelection(){ 
+				if (getSelectedFile().isFile()){ return; }
+				super.approveSelection();
+			}
+		};		
+		this.dOldScripts.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOldScripts.setFileFilter(new FileNameExtensionFilter("Bash script files (*.sh)","sh"));
+		this.dOldScripts.setAcceptAllFileFilterUsed(false);
+		this.dOldScripts.setMultiSelectionEnabled(false);
 		//------ set border and layout
 		putRow1.setLayout(new BoxLayout(putRow1, BoxLayout.X_AXIS));
 		putRow1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -1248,7 +1309,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- app output
 		this.txAppOutput.setEnabled(true);
 		this.bAppOutputClear.setEnabled(true);
-		this.bAppOutputSave.setEnabled(false);
+		this.bAppOutputSave.setEnabled(true);
 		
 		//file list pane
 		this.filesTable.setEnabled(false);
@@ -2148,7 +2209,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				
 			} else {			
 				//submit jobs
-				jobsInfo				= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority);
+				jobsInfo				= this.opProject.submitSimJobs(queueName, opLicNum, jobPriority, this.outDir, this.errDir, this.scrDir);
 				
 				//write the output
 				if (jobsInfo != null){						
@@ -2601,15 +2662,221 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//-----------------------------------------------------------------------------------------------
 		// save console to file button
 		//-----------------------------------------------------------------------------------------------
-		if (e.getSource() == this.bAppOutputSave){
-			//TODO
+		if (e.getSource() == this.bAppOutputSave && this.txAppOutput.getText() != null){
+			
+			//local attributes
+			JFileChooser 		saveDialog 	= new JFileChooser();
+			int					returnVal	= 0;
+			File				outFile		= null;
+			FileOutputStream	outFileStr	= null;
+			DataOutputStream	outDataStr	= null; 
+			
+			//show the dialog
+			returnVal						= saveDialog.showSaveDialog(this.mainPanel);
+			
+			if (returnVal == JFileChooser.APPROVE_OPTION){
+			
+				try {
+					outFile						= saveDialog.getSelectedFile();
+					outFileStr					= new FileOutputStream(outFile);
+					outDataStr					= new DataOutputStream(outFileStr);
+					
+					outDataStr.writeUTF(this.txAppOutput.getText() + this.lineBreak);
+					
+					outDataStr.flush();
+					outDataStr.close();
+					
+					outFileStr.flush();
+					outFileStr.close();
+					
+				} catch (FileNotFoundException ex) {
+					//log the error
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (bAppOutputSave)");
+					//show a popup message
+					JOptionPane.showMessageDialog(
+							this.mainPanel,
+							"Unable to save the output file (see the log file)",
+							"ERROR",
+							JOptionPane.ERROR_MESSAGE);
+					//get out
+					return;
+				} catch (IOException ex){
+					//log the error
+					this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (bAppOutputSave)");
+					//show a popup message
+					JOptionPane.showMessageDialog(
+							this.mainPanel,
+							"Unable to write the output file (see the log file)",
+							"ERROR",
+							JOptionPane.ERROR_MESSAGE);
+					//get out
+					return;
+				}
+				
+			} else {
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Save operation cancelled by user: output not saved",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				return; 
+			}			
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// select output path button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bSimOutDir){
+			
+			//local attributes
+			int				returnVal		= 0;
+			
+			//try to load the output path
+			try{
+				returnVal					= this.dOutChooser.showOpenDialog(this.pProject);
+			} catch (HeadlessException err){
+				this.sysUtils.printlnErr(err.getMessage(), this.className + ", actionPerformed (bSimOutDir)");
+				return;
+			}
+			
+			//get the project file directory
+			if (returnVal == JFileChooser.APPROVE_OPTION){				
+				//get the output path
+				this.outDir					= this.dOutChooser.getSelectedFile().getPath();			
+			} else {
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Scripts directory not set",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				return; 
+			}
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// select error path button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bSimErrDir){
+			
+			//local attributes
+			int				returnVal		= 0;
+			
+			//try to load the output path
+			try{
+				returnVal					= this.dErrChooser.showOpenDialog(this.pProject);
+			} catch (HeadlessException err){
+				this.sysUtils.printlnErr(err.getMessage(), this.className + ", actionPerformed (bSimErrDir)");
+				return;
+			}
+			
+			//get the project file directory
+			if (returnVal == JFileChooser.APPROVE_OPTION){				
+				//get the output path
+				this.errDir					= this.dErrChooser.getSelectedFile().getPath();			
+			} else {
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Scripts directory not set",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				return; 
+			}
+			
+		}
+		
+		//-----------------------------------------------------------------------------------------------
+		// select scripts path button
+		//-----------------------------------------------------------------------------------------------
+		if (e.getSource() == this.bSimScrDir){
+			
+			//local attributes
+			int				returnVal		= 0;
+			
+			//try to load the output path
+			try{
+				returnVal					= this.dScrChooser.showOpenDialog(this.pProject);
+			} catch (HeadlessException err){
+				this.sysUtils.printlnErr(err.getMessage(), this.className + ", actionPerformed (bSimScrDir)");
+				return;
+			}
+			
+			//get the project file directory
+			if (returnVal == JFileChooser.APPROVE_OPTION){				
+				//get the output path
+				this.scrDir					= this.dScrChooser.getSelectedFile().getPath();			
+			} else {
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Scripts directory not set",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				return; 
+			}
+			
 		}
 		
 		//-----------------------------------------------------------------------------------------------
 		// remove script files button
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bRemoveScrFiles){
-			//TODO
+			
+			//local attributes
+			int				returnVal		= 0;
+			int				filesRemNum		= 0;
+			
+			//try to load the output path
+			try{
+				returnVal					= this.dOldScripts.showOpenDialog(this.pProject);
+			} catch (HeadlessException err){
+				this.sysUtils.printlnErr(err.getMessage(), this.className + ", actionPerformed (bRemoveScrFiles)");
+				return;
+			}
+			
+			//get the project file directory
+			if (returnVal == JFileChooser.APPROVE_OPTION){				
+				//get the output path
+				this.oldScrsDir				= this.dOldScripts.getSelectedFile().getPath();			
+			} else { 
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Unable to get the bash scripts directory",
+						"",
+						JOptionPane.INFORMATION_MESSAGE);
+				//get out
+				return;
+			}
+			
+			try {
+				
+				filesRemNum					= this.opProject.removeOldScripts(this.oldScrsDir);
+				
+				//show a messsage
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						Integer.toString(filesRemNum) + " script file(s) removed",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);
+				
+			} catch (OpnetHeavyException ex) {
+				//log the error
+				this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (bRemoveScrFiles)");
+				//show a popup message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						"Unable to remove the bash script files (see the log file)",
+						"ERROR",
+						JOptionPane.ERROR_MESSAGE);
+				//get out
+				return;
+			}
+			
 		}
 		
 		//-----------------------------------------------------------------------------------------------

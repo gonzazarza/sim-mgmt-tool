@@ -254,19 +254,34 @@ public interface IOpnetProject {
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/**
-Submit the corresponding jobs to the queue
+	 * Submit the corresponding jobs to the queue
 	 * 
 	 * @param		pQueueName				the queue to be used
 	 * @param		pOpLicNum				the number of Opnet licenses needed 
 	 * @param		pJobPriority			the Unix priority of the jobs
+	 * @param		pOutDir					the output directory
+	 * @param		pErrDir					the error directory
+	 * @param		pScrDir					the script directory 
 	 * @return								the operations info
 	 * @throws		OpnetHeavyException		in case of a DrmaaException	
 	 *  									in case of an InternalEception
 	 *  									in case of an IllegalArgumentException
-	 *  									in case of an OutOfMemory Error
-	 *  
+	 *  									in case of an OutOfMemory Error 
 	 */
-	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority) throws OpnetHeavyException;
+	public Vector<String> submitSimJobs(String pQueueName, int pOpLicNum, float pJobPriority, 
+										String pOutDir, String pErrDir, String pScrDir) throws OpnetHeavyException;
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/**
+	 * Remove the bash script files from the specified directory
+	 * 
+	 * @param		pScrPath				the path of the bash script files
+	 * @return								the number of bash files removed
+	 * @throws		OpnetHeavyException		If errors removing the scripts or null path
+	 *
+	 */
+	public int removeOldScripts(String pScrPath) throws OpnetHeavyException;
 	
 	
 	/*	
