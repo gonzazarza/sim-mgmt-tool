@@ -7,7 +7,7 @@ import java.util.Vector;
  * Opnet job datatype
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2010.1027
+ * @version		2011.0313
  */
 public class OpnetJob {
 
@@ -16,7 +16,7 @@ public class OpnetJob {
 	Attributes																										
 	==================================================================================================================
 	*/
-	private boolean						efFileIncluded			= false;					//ef file status
+	private boolean						efFileIncluded			= true;					//ef file status
 	private Vector<String>				efFileMKSIMCode			= new Vector<String>();		//ef file op_mksim code
 	private boolean						efFileMKSIMCompiled		= false;					//ef file op_mksim status
 	private String						simFileName				= "";						//sim file name

@@ -20,12 +20,9 @@ public interface IAppUtils {
 	Static Attributes																										
 	==================================================================================================================
 	*/
-	
-	//--- thread operation type
-	/** thread operation: run op_mksim */
-	static final int		THREAD_OP_MKSIM		= 0;
-	/** thread operation: qstat */
-	static final int		THREAD_QSTAT		= 1;
+	//--- thread exit string
+	/** thread exit string message */
+	static final String		THREAD_EXIT_MSG		= " All enqueued jobs finished ";
 	
 	//--- app properties status
 	/** app properties: status not applied */

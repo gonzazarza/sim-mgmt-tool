@@ -1190,8 +1190,8 @@ public class OpnetProject implements IOpnetProject {
 							script_name				= this.appUtils.newGenericBashScript(null, item.getSimFileDTSIMCode(), uniqueShId);
 						}
 						
-						if (pOutDir != null){ jt.setOutputPath(pOutDir); }
-						if (pErrDir != null){ jt.setErrorPath(pErrDir); }
+						if (pOutDir != null){ jt.setOutputPath(":" + pOutDir); }
+						if (pErrDir != null){ jt.setErrorPath(":" + pErrDir); }
 						
 						jt.setNativeSpecification("-l opnet_licenses=" + Integer.toString(pOpLicNum));
 						jt.setNativeSpecification("-q " + pQueueName);

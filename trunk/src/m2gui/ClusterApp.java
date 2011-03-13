@@ -39,6 +39,7 @@ import m1kernel.FilesTableModel;
 import m1kernel.OpnetProject;
 import m1kernel.PropsTableCellRenderer;
 import m1kernel.PropsTableModel;
+import m1kernel.ThreadForQstat;
 //events and listeners
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -50,7 +51,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
 import org.ggf.drmaa.DrmaaException;
 import org.ggf.drmaa.Session;
 //exceptions
@@ -60,7 +60,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
 import m1kernel.exceptions.OpnetLightException;
 import m1kernel.exceptions.OpnetHeavyException;
 //abstract classes
@@ -74,7 +73,7 @@ import m1kernel.interfaces.ISysUtils;
  * Main class of the ClusterGUI application
  * 
  * @author 		<a href = "mailto:gonzalo.zarza@caos.uab.es"> Gonzalo Zarza </a>
- * @version		2011.0310
+ * @version		2011.0313
  */
 public class ClusterApp extends ClusterClass implements ChangeListener, ActionListener, MouseListener, KeyListener, DocumentListener {
  
@@ -91,6 +90,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private String						appTitle				= "";							//app frame title
 	private String						lineBreak				= "\n";							//system line separator
 	private IOpnetProject				opProject				= null;							//opnet project
+	Thread								thQstat					= null;							//thread for qstat command
 	//main panel attributes and components
 	private JPanel						mainPanel				= null;							//main panel
 	private JTabbedPane					tabbedPane				= null;							//main tabbed pane	
@@ -162,6 +162,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 	private String						outDir					= null;							//path for the outputs
 	private String						errDir					= null;							//path for the error logs
 	private String						scrDir					= null;							//path for the scripts
+	private JLabel						lOutDir					= null;							//output dir label
+	private JLabel						lErrDir					= null;							//error dir label
+	private JLabel						lScrDir					= null;							//scripts dir label
 	
 	/*	
 	================================================================================================================== 
@@ -552,10 +555,8 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//--- set border and layout
 		pfList.setLayout(new BoxLayout(pfList, BoxLayout.Y_AXIS));
 		pfList.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		//--- set background color
-		
-		pfList.setAlignmentY(JPanel.TOP_ALIGNMENT);
-		
+		//--- set background color		
+		pfList.setAlignmentY(JPanel.TOP_ALIGNMENT);		
 		pfList.setBackground(IAppUtils.COLOR_COMPONENTS);
 		//--- add panel
 		this.pFileList.add(pfList);
@@ -1059,6 +1060,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		JLabel				lSimOutDir		= new JLabel("Output dir:");
 		JLabel				lSimErrDir		= new JLabel("Error dir:");
 		JLabel				lSimScrDir		= new JLabel("Scripts dir:");
+		this.lOutDir						= new JLabel("(default dir)");
+		this.lErrDir						= new JLabel("(default dir)");
+		this.lScrDir						= new JLabel("(default dir)");		
 		this.tfSimQueue						= new JTextField("cluster.q", 	txSize);
 		this.tfSimPriority					= new JTextField("0", 			txSize);
 		this.tfSimLicNumber					= new JTextField("1", 			txSize);
@@ -1086,13 +1090,16 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				super.approveSelection();
 			}
 		};	
-		this.dOutChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+//		this.dOutChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOutChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.dOutChooser.setAcceptAllFileFilterUsed(false);
 		this.dOutChooser.setMultiSelectionEnabled(false);
-		this.dErrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+//		this.dErrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dErrChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.dErrChooser.setAcceptAllFileFilterUsed(false);
 		this.dErrChooser.setMultiSelectionEnabled(false);
-		this.dScrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+//		this.dScrChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dScrChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.dScrChooser.setAcceptAllFileFilterUsed(false);
 		this.dScrChooser.setMultiSelectionEnabled(false);
 		//------ add listeners
@@ -1178,8 +1185,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp3Opts4.add(lSimOutDir);
 		lp3Opts4.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts4.add(this.bSimOutDir);
+		lp3Opts4.add(Box.createHorizontalStrut(20));
+		lp3Opts4.add(this.lOutDir);
 		lp3Opts4.add(Box.createHorizontalGlue());
-		lp3Opts4.add(Box.createHorizontalStrut(strutHor));
 		//row5
 		lp3Opts5.setLayout(new BoxLayout(lp3Opts5, BoxLayout.X_AXIS));
 		lp3Opts5.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -1187,8 +1195,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp3Opts5.add(lSimErrDir);
 		lp3Opts5.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts5.add(this.bSimErrDir);
+		lp3Opts5.add(Box.createHorizontalStrut(20));
+		lp3Opts5.add(this.lErrDir);
 		lp3Opts5.add(Box.createHorizontalGlue());
-		lp3Opts5.add(Box.createHorizontalStrut(strutHor));
 		//row6
 		lp3Opts6.setLayout(new BoxLayout(lp3Opts6, BoxLayout.X_AXIS));
 		lp3Opts6.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -1196,8 +1205,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		lp3Opts6.add(lSimScrDir);
 		lp3Opts6.add(Box.createHorizontalStrut(strutHor));
 		lp3Opts6.add(this.bSimScrDir);
-		lp3Opts6.add(Box.createHorizontalGlue());
-		lp3Opts6.add(Box.createHorizontalStrut(strutHor));
+		lp3Opts6.add(Box.createHorizontalStrut(20));
+		lp3Opts6.add(this.lScrDir);
+		lp3Opts6.add(Box.createHorizontalGlue());		
 		//------ add components
 		pp3Row1.add(lp3Title);
 		pp3Row1.add(lp3Opts1);
@@ -1249,11 +1259,13 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				super.approveSelection();
 			}
 		};		 
-		this.dOldScripts.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+//		this.dOldScripts.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOldScripts.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.dOldScripts.setFileFilter(new FileNameExtensionFilter("Bash script files (*.sh)","sh"));
 		this.dOldScripts.setAcceptAllFileFilterUsed(false);
-		this.dOldScripts.setMultiSelectionEnabled(false);		 
-		this.dOldsims.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOldScripts.setMultiSelectionEnabled(false);
+//		this.dOldsims.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		this.dOldsims.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.dOldsims.setFileFilter(new FileNameExtensionFilter("Simulation files (*.sim)","sim"));
 		this.dOldsims.setAcceptAllFileFilterUsed(false);
 		this.dOldsims.setMultiSelectionEnabled(false);
@@ -1511,6 +1523,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//set corresponding variables
 					//>> nothing to do
 					
+					//apply actions
+					//--- interrupts the qstat thread (if necessary)
+					if (this.thQstat != null){ this.thQstat.interrupt(); }
+					
 					//update phase status in the properties table
 					this.statusDataSetValue(ClusterApp.LABEL_LOAD_PRJ, IAppUtils.STAT_DONE);									
 					
@@ -1686,6 +1702,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					this.updateSimsListContent();
 					//--- load the sim file help
 					this.getSimsFileHelp();
+					//--- interrupts the qstat thread (if necessary)
+					if (this.thQstat != null){ this.thQstat.interrupt(); }
+					
 					
 				} else {	// pState == FALSE
 					//disable gui components
@@ -1815,7 +1834,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 					//>> nothing to do
 					
 					//update phase status in the properties table
-					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_DONE);
+					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_RUNNING);
 					
 					//trigger steps
 					//>> nothing to do					
@@ -1889,7 +1908,11 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		case ClusterApp.STEP_4_SUBMIT_SIM:
 			this.s3StatusData[0][1]		= IAppUtils.STAT_NOT_APPLIED;
 			//$FALL-THROUGH$
-		case ClusterApp.STEP_4_SUBMIT_SIM + 1:
+		case ClusterApp.STEP_5_MONITOR_JOBS:
+			this.s3StatusData[1][1]		= IAppUtils.STAT_NOT_APPLIED;
+			//$FALL-THROUGH$
+			break;
+		case ClusterApp.STEP_5_MONITOR_JOBS + 1:
 			//nothing to do
 			break;
 		default:
@@ -2127,7 +2150,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_1_LOAD_PRJ, opStatus);
-		
+
 		
 	} // End startPhase1
 	
@@ -2250,6 +2273,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		//run the op_mksim command for the selected net names
 		try {
 					
+			//disable the run button temporarily
+			this.bRunMKSIM.setEnabled(false);
+			
 			//run the command			
 			outVec						= this.opProject.runMKSIMCmd();
 			
@@ -2264,7 +2290,17 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			}			
 			
 			//set the status flag
-			opStatus					= true;
+			opStatus					= true; 
+			
+			//show a popup notification message
+			JOptionPane.showMessageDialog(
+					this.mainPanel,
+					"Command op_mksim finished successfully",
+					"Information",
+					JOptionPane.INFORMATION_MESSAGE);			
+			
+			//re-enable the run button temporarily
+			this.bRunMKSIM.setEnabled(true);
 			
 		} catch (OpnetHeavyException e) {
 			//show the error message
@@ -2323,6 +2359,7 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 				opStatus				= false;
 				
 			} else {			
+								
 				//submit jobs
 				jobsInfo				= this.opProject.submitSimJobs(	queueName, opLicNum, jobPriority, 
 																		this.outDir, this.errDir, this.scrDir);
@@ -2338,8 +2375,10 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 						this.printAppOutputText(it.next(), ClusterApp.TX_STDOUT, false);					
 					}				
 				}				
+				
 				//update the completion flag
 				opStatus				= true;
+				
 			}
 			
 		} catch (OpnetHeavyException e) {
@@ -2359,28 +2398,22 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		}
 		
 		//triggers the corresponding phase and actions
-		//this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
+		this.actionTrigger(ClusterApp.STEP_4_SUBMIT_SIM, opStatus);
 		
 	} // End startPhase4
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
 	/** 
-	 * Start the fifth phase of the system in order to monitor the simulation jobs on the queue
+	 * Start the fifth phase of the system in order to monitor the simulation jobs on the queue (by threads)
 	 */
 	private void startPhase5(){
 		
 		//local attributes
 		boolean 				opStatus	= false;
-		int						qsStatus	= 0;
-		int 					endCounter	= 0;
-		int						jobCounter	= 0;
-		String					id			= null;
-		String					fileName	= null;
-		String					status		= null;
 		HashMap<String,String>	idsInfo		= null;
-		Iterator<String>		idsIter		= null;
-		
+		Session					qSession	= null;
+				
 		//check the previous condition
 		if (!this.opProject.isSimSubmitDone()){
 			//show the error message
@@ -2397,81 +2430,24 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		
 		//go over the sims list
 		if (idsInfo != null){
-		
-			//get iterator
-			idsIter						= idsInfo.keySet().iterator();
-			jobCounter					= idsInfo.size();		
-			
-			//keep monitoring the queue until end...
-//			while (jobCounter > endCounter){
-				
-				//init counter
-				endCounter				= 0;
-				
-				//print header
-				this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, true);
-				this.printAppOutputText(" Enqueued jobs status", ClusterApp.TX_STDOUT, false);
-				this.printAppOutputText("------------------------------------------------------------", ClusterApp.TX_STDOUT, false);
-				
-				//now go over the sims 
-				while (idsIter.hasNext()){
 					
-					id					= idsIter.next();
-					fileName			= idsInfo.get(id);
-										
-					try{
-						
-						qsStatus		= this.opProject.getQueueSession().getJobProgramStatus(id);
-					
-						switch (qsStatus){					
-						case Session.UNDETERMINED: 			status = "status cannot be determined"; 							break;						
-						case Session.QUEUED_ACTIVE:			status = "is queued and active"; 									break;
-						case Session.USER_ON_HOLD:			status = "is queued and in user hold"; 								break;
-						case Session.SYSTEM_ON_HOLD:		status = "is queued and in system hold"; 							break;
-						case Session.USER_SYSTEM_ON_HOLD:	status = "is queued and in user and system hold";					break;
-						case Session.RUNNING:				status = "is running"; 												break;
-						case Session.SYSTEM_SUSPENDED:		status = "is system suspended"; 									break;
-						case Session.USER_SUSPENDED:		status = "is user suspended"; 										break;
-						case Session.USER_SYSTEM_SUSPENDED:	status = "is user and system suspended"; 							break;
-						case Session.DONE:					status = "finished normally"; 						endCounter++;	break;
-						case Session.FAILED:				status = "finished, but failed"; 					endCounter++;	break;
-						}
-						
-						this.printAppOutputText("Job " + id + " (" + fileName + ") " + status, ClusterApp.TX_STDOUT, false);
-						
-						//update status
-						this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_RUNNING);
-						
-					} catch (DrmaaException e){
-						//show the error message
-						this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
-						//show the error in the output text area
-						this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
-						//update status flag
-						opStatus 		= false;
-					}
-					
-				} // End inner while
-				
-				//wait a predefined time
-				try {
-					Thread.sleep(ClusterClass.QSTAT_INTERVAL);
-				} catch (InterruptedException e) {
-					//show the error message
-					this.sysUtils.printlnErr(e.getMessage(), this.className + ", startPhase5");
-					//show the error in the output text area
-					this.printAppOutputText(e.getMessage(), ClusterApp.TX_STDERR, true);
-					//update status flag
-					opStatus 		= false;
-				}
-				
-//			} // End forever while
+			//get session
+			qSession					= this.opProject.getQueueSession();
 			
-			//check final status
-			if (jobCounter == endCounter){ opStatus = true; }
+			//init the thread for the qstat
+			thQstat						= new Thread(new ThreadForQstat(this.sysUtils, this.txAppOutput, idsInfo, qSession));
 			
+			//start the qstat
+			thQstat.start();
+			
+			//update flag
+			opStatus					= true;
+			
+		} else {
+			//update flag
+			opStatus					= false;
 		}
-			
+		
 		//triggers the corresponding phase and actions
 		this.actionTrigger(ClusterApp.STEP_5_MONITOR_JOBS, opStatus);
 		
@@ -2999,7 +2975,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//get the project file directory
 			if (returnVal == JFileChooser.APPROVE_OPTION){				
 				//get the output path
-				this.outDir					= this.dOutChooser.getSelectedFile().getPath();			
+				this.outDir					= this.dOutChooser.getSelectedFile().getPath();
+				//update the output path label
+				this.lOutDir.setText("New dir: " + this.outDir);
 			} else {
 				//show a popup message
 				JOptionPane.showMessageDialog(
@@ -3031,7 +3009,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//get the project file directory
 			if (returnVal == JFileChooser.APPROVE_OPTION){				
 				//get the output path
-				this.errDir					= this.dErrChooser.getSelectedFile().getPath();			
+				this.errDir					= this.dErrChooser.getSelectedFile().getPath();		
+				//update the error path label
+				this.lErrDir.setText("New dir: " + this.errDir);
 			} else {
 				//show a popup message
 				JOptionPane.showMessageDialog(
@@ -3063,7 +3043,9 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 			//get the project file directory
 			if (returnVal == JFileChooser.APPROVE_OPTION){				
 				//get the output path
-				this.scrDir					= this.dScrChooser.getSelectedFile().getPath();			
+				this.scrDir					= this.dScrChooser.getSelectedFile().getPath();		
+				//update the script path label
+				this.lScrDir.setText("New dir: " + this.scrDir);
 			} else {
 				//show a popup message
 				JOptionPane.showMessageDialog(
@@ -3080,7 +3062,44 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		// kill jobs button
 		//-----------------------------------------------------------------------------------------------
 		if (e.getSource() == this.bKillJobs){
-			//TODO
+			
+			Session					qSession	= this.opProject.getQueueSession();
+			HashMap<String, String>	idsInfo		= this.opProject.getIdsInfo();
+			Iterator<String>		idsIter		= null;
+			String					id			= null;
+			int						killed		= 0;
+			
+			//check if proceed
+			if (this.thQstat != null && qSession != null && idsInfo != null){				
+				idsIter							= idsInfo.keySet().iterator();
+				//kill simulations one by one
+				while (idsIter.hasNext()){					
+					id							= idsIter.next();					
+					try {						
+						qSession.control(id, Session.TERMINATE);
+						killed++;						
+					} catch (DrmaaException ex) {
+						//log the error
+						this.sysUtils.printlnErr(ex.getMessage(), this.className + ", actionPerformed (bKillJobs)");
+						//show a popup message
+						JOptionPane.showMessageDialog(
+								this.mainPanel,
+								"Unable to kill the job " + id + " (see the log file)",
+								"ERROR",
+								JOptionPane.ERROR_MESSAGE);
+						//get out
+						return;
+					}									
+				}
+				
+				//show message
+				JOptionPane.showMessageDialog(
+						this.mainPanel,
+						Integer.toString(killed) + " job(s) killed",
+						"Information",
+						JOptionPane.INFORMATION_MESSAGE);				
+			}
+		
 		}
 				
 		//-----------------------------------------------------------------------------------------------
@@ -3835,6 +3854,18 @@ public class ClusterApp extends ClusterClass implements ChangeListener, ActionLi
 		if (e.getDocument() == this.deAppOutput){
 			//enable the save button
 			this.bAppOutputSave.setEnabled(true);
+			
+			//check if qstat finished
+			if (this.thQstat != null){				
+				//get the output text
+				String 	text		= this.txAppOutput.getText();				
+				//check if correct thread ending 
+				if (text != null && text.contains(IAppUtils.THREAD_EXIT_MSG)){
+					//start the stat update				
+					this.statusDataSetValue(ClusterApp.LABEL_QSTAT, IAppUtils.STAT_DONE);
+				}				
+			}
+			
 		}
 		
 	} // End void insertUpdate
