@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces;
+package m1kernel.interfaces;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -28,8 +28,8 @@ import java.util.Vector;
 
 import org.ggf.drmaa.Session;
 //exceptions
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetLightException;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.exceptions.OpnetLightException;
+import m1kernel.exceptions.OpnetHeavyException;
 
 /** 
  * Interface to acces the Opnet project class

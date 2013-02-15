@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -22,17 +22,17 @@ package sim.mgmt.tool.SimMgmtTool.m1kernel;
  */
 
 //classes
-import javax.swing.table.AbstractTableModel; 
+import javax.swing.table.AbstractTableModel;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.ISysUtils;
 
 /**
- * Modified table model class to be used in the system properties status table
+ * Modified table model class to edit boolean fields (checkboxs) for the ef files table
  * 
  * @author 		<a href = "mailto:gazarza@gmail.com"> Gonzalo Zarza </a>
- * @version		2010.1019
+ * @version		2010.1021
  */
-public class PropsTableModel extends AbstractTableModel {
+public class FilesTableModel extends AbstractTableModel {
 
 	/*	
 	================================================================================================================== 
@@ -58,20 +58,28 @@ public class PropsTableModel extends AbstractTableModel {
 	 * @param	pColumnNames 			the table column headers
 	 *
 	 */
-	public PropsTableModel(ISysUtils pSysUtils, Object[][] pData, String[] pColumnNames){
+	public FilesTableModel(ISysUtils pSysUtils, Object[][] pData, String[] pColumnNames){
 		
 		//get and stores the name of the class
 		this.className				= this.getClass().getName();	
 		
 		//set the system utilities class
 		this.sysUtils				= pSysUtils;
-
+		
         //inform the start of the initialization of the class
 		this.sysUtils.printlnOut("... Init: start ...", this.className);
 		
 		//set the column names and the data
-		this.columnNames			= pColumnNames;
-		this.data					= pData;
+		if (pData != null){
+			this.data					= pData;
+		} else {			
+			this.data					= this.setDefaultData();
+		}
+		if (pColumnNames != null){
+			this.columnNames			= pColumnNames;
+		} else {
+			this.columnNames			= this.setDefaultColumnNames();
+		}		
 				
 		//informs the correct initialization of the class
 		this.sysUtils.printlnOut("... Init: DONE! ...", this.className);
@@ -95,22 +103,75 @@ public class PropsTableModel extends AbstractTableModel {
 		//status flag
 		boolean		status			= false;
 		
-		//avoid null pointer exception
-		if (pColumnNames == null || pData == null){ return(status); }
-		
 		//delete previous data
 		this.columnNames			= null;
 		this.data					= null;
 		
 		//set new values
-		this.columnNames			= pColumnNames;
-		this.data					= pData;
+		//--- data
+		if (pData != null){
+			this.data				= pData;
+		} else {
+			this.data				= this.setDefaultData();
+		}
+		//--- column names
+		if (pColumnNames != null){
+			this.columnNames		= pColumnNames;
+		} else {
+			this.columnNames		= this.setDefaultColumnNames();
+		}		
 		
 		status						= true;
 		
 		return(status);
 		
 	} // End boolean resetModel	
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** Clean the table model data and column names */
+	public void cleanModel(){
+		
+		//clean the column and data
+		this.columnNames			= this.setDefaultColumnNames();
+		this.data					= this.setDefaultData();
+		
+	} // End cleanModel
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+	
+	/** Set the default column names 
+	 *
+	 * @return		the default column names 
+	 * 
+	 */
+	private String[] setDefaultColumnNames(){
+		
+		//local attributes
+		String[]	lNames			= new String[]{"File name", "Include?"};
+		
+		return (lNames);
+		
+	} // End String[] setDefaultColumnNames	
+	
+	/* ------------------------------------------------------------------------------------------------------------ */
+
+	/** Set the default data values 
+	 *
+	 * @return		the default data 
+	 * 
+	 */
+	private Object[][] setDefaultData(){
+		
+		//local attributes
+		Object[][] 	lData			= new Object[1][2];
+			
+		lData[0][0]					= new String("");
+		lData[0][1]					= new String("");
+		
+		return (lData);
+		
+	} // End Object[][] setDefaultData
 	
 	/* ------------------------------------------------------------------------------------------------------------ */
 	
@@ -148,7 +209,7 @@ public class PropsTableModel extends AbstractTableModel {
 	/* ------------------------------------------------------------------------------------------------------------ */
     
     @Override
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes"})
     /** @return the column class */
 	public Class getColumnClass(int c) {
          return getValueAt(0, c).getClass();
@@ -160,8 +221,12 @@ public class PropsTableModel extends AbstractTableModel {
     /** @return the editable property of a cell */
     @Override
 	public boolean isCellEditable(int row, int col) {
-        return (false);
-
+        //Note that the data/cell address is constant,
+        //no matter where the cell appears onscreen.
+    	if (col != 1) {
+            return false;
+        }
+		return true;
     } // End boolean isCellEditable
     
 	/* ------------------------------------------------------------------------------------------------------------ */
@@ -184,5 +249,4 @@ public class PropsTableModel extends AbstractTableModel {
     } // End void setValueAt
     
 
-} // End class PropsTableModel
-
+} // End class FileTableModel

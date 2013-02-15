@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions;
+package m1kernel.exceptions;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.

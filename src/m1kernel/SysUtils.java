@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.ISysUtils;
 
 /** 
  * System oriented utilities class

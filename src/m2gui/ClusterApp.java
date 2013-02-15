@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m2gui;
+package m2gui;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -56,11 +56,11 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 //other classes
-import sim.mgmt.tool.SimMgmtTool.m1kernel.FilesTableModel;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.OpnetProject;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.PropsTableCellRenderer;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.PropsTableModel;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.ThreadForQstat;
+import m1kernel.FilesTableModel;
+import m1kernel.OpnetProject;
+import m1kernel.PropsTableCellRenderer;
+import m1kernel.PropsTableModel;
+import m1kernel.ThreadForQstat;
 //events and listeners
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -81,14 +81,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetLightException;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.exceptions.OpnetLightException;
+import m1kernel.exceptions.OpnetHeavyException;
 //abstract classes
-import sim.mgmt.tool.SimMgmtTool.m2gui.ClusterClass;
+import m2gui.ClusterClass;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IAppUtils;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IOpnetProject;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.IAppUtils;
+import m1kernel.interfaces.IOpnetProject;
+import m1kernel.interfaces.ISysUtils;
 
 /**
  * Main class of the ClusterGUI application

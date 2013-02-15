@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m2gui;
+package m2gui;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -28,9 +28,9 @@ import javax.swing.JOptionPane;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 //other classes
-import sim.mgmt.tool.SimMgmtTool.m1kernel.SysUtils;
+import m1kernel.SysUtils;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.ISysUtils;
 
 /**
  * GUI serving as the main interface between OPNET Modeler 14.0 and the IBM cluster at CAOS.

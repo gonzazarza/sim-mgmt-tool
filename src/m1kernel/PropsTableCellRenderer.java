@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -30,7 +30,7 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.ISysUtils;
 
 /**
  * Modified table cell renderer class for the properties table (to modify cell color and fonts)

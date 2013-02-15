@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -34,13 +34,13 @@ import org.ggf.drmaa.SessionFactory;
 import org.ggf.drmaa.Session;
 import org.ggf.drmaa.JobTemplate;
 //exceptions
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetExceptionClass;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetHeavyException;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetLightException;
+import m1kernel.exceptions.OpnetExceptionClass;
+import m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.exceptions.OpnetLightException;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IAppUtils;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IOpnetProject;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.IAppUtils;
+import m1kernel.interfaces.IOpnetProject;
+import m1kernel.interfaces.ISysUtils;
 
 /** 
  * Opnet project class
@@ -1220,7 +1220,6 @@ public class OpnetProject implements IOpnetProject {
 												
 						jt.setRemoteCommand("sh");
 						jt.setArgs(new String[] {script_name});
-						//jt.setArgs(Collections.singletonList(script_name)); // <-- to be used with drmaa v1 
 						
 						id = this.queueSession.runJob(jt);
 										

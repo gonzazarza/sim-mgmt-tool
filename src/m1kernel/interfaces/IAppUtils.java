@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces;
+package m1kernel.interfaces;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -24,8 +24,8 @@ package sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces;
 //classes
 import java.awt.Color;
 import java.util.Vector;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.ConsoleJob;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.ConsoleJob;
+import m1kernel.exceptions.OpnetHeavyException;
 
 /** 
  * Interface to access to the application oriented utilities class

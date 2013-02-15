@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m2gui;
+package m2gui;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.

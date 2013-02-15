@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -38,9 +38,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions.OpnetHeavyException;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IAppUtils;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.exceptions.OpnetHeavyException;
+import m1kernel.interfaces.IAppUtils;
+import m1kernel.interfaces.ISysUtils;
 
 /** 
  * Application oriented utilities class

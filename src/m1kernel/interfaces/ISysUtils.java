@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces;
+package m1kernel.interfaces;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.

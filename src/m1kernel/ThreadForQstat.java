@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -29,8 +29,8 @@ import javax.swing.JTextArea;
 import org.ggf.drmaa.DrmaaException;
 import org.ggf.drmaa.Session;
 //interfaces
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.IAppUtils;
-import sim.mgmt.tool.SimMgmtTool.m1kernel.interfaces.ISysUtils;
+import m1kernel.interfaces.IAppUtils;
+import m1kernel.interfaces.ISysUtils;
 
 
 /** 
@@ -104,6 +104,7 @@ public class ThreadForQstat implements Runnable {
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
 	 */
+	@Override
 	public void run() {
 
 		//local attributes

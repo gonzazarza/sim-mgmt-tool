@@ -1,4 +1,4 @@
-package sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions;
+package m1kernel;
 
 /* 
  * Copyright (c) 2010-2013 Gonzalo Zarza. All rights reserved.
@@ -22,63 +22,83 @@ package sim.mgmt.tool.SimMgmtTool.m1kernel.exceptions;
  */
 
 /** 
- * Opnet project heavy exception
+ * Console job datatype
  * 
  * @author 		<a href = "mailto:gazarza@gmail.com"> Gonzalo Zarza </a>
- * @version		2010.1026
+ * @version		2011.0216
  */
-public class OpnetHeavyException extends OpnetExceptionClass {
-
+public class ConsoleJob {
+	
 	/*	
 	================================================================================================================== 
 	Attributes																										
 	==================================================================================================================
 	*/
-	private static final long 				serialVersionUID 		= 1L;					//default serial version
-	private String							message					= "unknown";			//exception message
-	private String							title					= "";					//exception title
-	private int								type					= 0;					//exception type
-	
+	private int							exitValue		= 0;							//subprocess exit value
+	private String						stdout			= "";							//console command output
+	private String						stderr			= "";							//console command errors
 	
 	/*	
 	================================================================================================================== 
 	Constructor																										
 	==================================================================================================================
 	*/
-	/**
-	 * Class constructor
-	 * 
-	 * @param		pException			the exception message
-	 */
-	public OpnetHeavyException(String pException){
-		
-		//call superclass constructor
-		super(pException);
-		//save exception message
-		this.message		= pException;
-		//set the dedault message type
-		this.type			= OpnetExceptionClass.MSG_TYPE_ERROR;
-		
-		
-	} // End constructor
+	/** Class constructor */
+	public ConsoleJob(){ super(); }
 
+
+	/*	
+	================================================================================================================== 
+	Methods																										
+	==================================================================================================================
+	*/
+	/** @return the cOutput enabled value */
+	public boolean stdoutActive(){
+		
+		return (this.stdout != null && this.stdout != "");
+		
+	} // End boolean stdoutActive
+	
+	/** @return the cErrors enabled value */
+	public boolean stderrActive(){
+		
+		return (this.exitValue != 0 && this.stderr != null && this.stderr != "");
+		
+	} // End boolean stderrActive
+	
 	/*	
 	================================================================================================================== 
 	Getters and Setters																										
 	==================================================================================================================
 	*/
-	/** @return the message */
-	@Override
-	public String getMessage() { return message; }
+	/** @return the exitValue */
+	public int getExitValue() { return exitValue; }
 
+	/** @param exitValue the exitValue to set */
+	public void setExitValue(int exitValue) {
+		this.exitValue = exitValue;
+	}
 	
-	/** @return the title */
-	public String getTitle(){ return title; }
-	
-	
-	/** @return the type */ 
-	@Override
-	public int getType() { return type; }	
-	
+	/** @return the output */
+	public String getStdout() { return stdout; }
+
+	/** @param pOutput the output to set */
+	public void setStdout(String pOutput) { 
 		
-} // End OpnetHeavyException
+		if (pOutput != null){
+			this.stdout = pOutput;
+		}
+	}
+
+	/** @return the errors */
+	public String getStderr() { return stderr; }
+
+	/** @param pErrors the errors to set */
+	public void setStderr(String pErrors) { 
+		
+		if (pErrors != null){
+			this.stderr = pErrors; 
+		}
+	}		
+
+} // End class ConsoleJob
